@@ -15,3 +15,28 @@ body {
   background-color: #f8fafc;
   color: #0f172a;
 }
+
+/* Printing: show only the invoice document, hide app chrome and controls. */
+@media print {
+  body {
+    background-color: #ffffff;
+  }
+  body * {
+    visibility: hidden;
+  }
+  .invoice-doc,
+  .invoice-doc * {
+    visibility: visible;
+  }
+  .invoice-doc {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}

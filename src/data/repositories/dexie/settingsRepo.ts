@@ -26,4 +26,17 @@ export class DexieSettingsRepository implements SettingsRepository {
       return number;
     });
   }
+
+  /**
+   * Atomically build and reserve the next invoice number, e.g. "INV-2026-018".
+   * Uses the configured prefix, the current year and a zero-padded sequence.
+   * Must be called inside an existing rw transaction that includes db.settings.
+   */
+  async nextInvoiceNumber(): Promise<string> {
+    const current = await this.get();
+    const seq = current.nextInvoiceSeq;
+    const year = new Date().getFullYear();
+    await db.settings.update(SETTINGS_ID, { nextInvoiceSeq: seq + 1 });
+    return `${current.invoicePrefix}-${year}-${String(seq).padStart(3, '0')}`;
+  }
 }
