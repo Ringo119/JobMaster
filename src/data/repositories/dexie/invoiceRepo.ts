@@ -3,6 +3,7 @@ import { db } from '../../db';
 import type { Invoice } from '../../models/invoice';
 import { computeVat } from '../../../lib/vat';
 import { toISODate } from '../../../lib/dates';
+import { uuid } from '../../../lib/uuid';
 import type { InvoiceRepository } from '../types';
 import { DexieSettingsRepository } from './settingsRepo';
 
@@ -60,7 +61,7 @@ export class DexieInvoiceRepository implements InvoiceRepository {
         const invoiceNumber = await settingsRepo.nextInvoiceNumber();
 
         const invoice: Invoice = {
-          id: crypto.randomUUID(),
+          id: uuid(),
           invoiceNumber,
           jobId: job.id,
           clientId: job.clientId,

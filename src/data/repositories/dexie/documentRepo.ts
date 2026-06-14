@@ -1,4 +1,5 @@
 import { db } from '../../db';
+import { uuid } from '../../../lib/uuid';
 import type { JobDocument } from '../../models/document';
 import type { DocumentRepository } from '../types';
 
@@ -12,7 +13,7 @@ export class DexieDocumentRepository implements DocumentRepository {
   async create(data: Omit<JobDocument, 'id' | 'createdAt'>): Promise<JobDocument> {
     const doc: JobDocument = {
       ...data,
-      id: crypto.randomUUID(),
+      id: uuid(),
       createdAt: new Date().toISOString(),
     };
     await db.documents.add(doc);

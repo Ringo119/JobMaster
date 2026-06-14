@@ -1,4 +1,5 @@
 import { db } from '../../db';
+import { uuid } from '../../../lib/uuid';
 import type { Client } from '../../models/client';
 import type { ClientRepository } from '../types';
 
@@ -17,7 +18,7 @@ export class DexieClientRepository implements ClientRepository {
   async create(data: Omit<Client, 'id' | 'createdAt'>): Promise<Client> {
     const client: Client = {
       ...data,
-      id: crypto.randomUUID(),
+      id: uuid(),
       createdAt: new Date().toISOString(),
     };
     await db.clients.add(client);

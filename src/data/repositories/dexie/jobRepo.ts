@@ -1,4 +1,5 @@
 import { db } from '../../db';
+import { uuid } from '../../../lib/uuid';
 import type { Job } from '../../models/job';
 import type { JobFilter, JobRepository, NewJob } from '../types';
 import { DexieSettingsRepository } from './settingsRepo';
@@ -37,7 +38,7 @@ export class DexieJobRepository implements JobRepository {
     const jobNumber = await settingsRepo.nextJobNumber();
     const job: Job = {
       ...data,
-      id: crypto.randomUUID(),
+      id: uuid(),
       jobNumber,
       createdAt: new Date().toISOString(),
     };

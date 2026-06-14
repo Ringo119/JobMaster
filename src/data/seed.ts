@@ -1,4 +1,5 @@
 import { db } from './db';
+import { uuid } from '../lib/uuid';
 import { defaultSettings } from './models/settings';
 import type { Client } from './models/client';
 import type { Job } from './models/job';
@@ -11,7 +12,7 @@ import type { Job } from './models/job';
  */
 
 function uid(): string {
-  return crypto.randomUUID();
+  return uuid();
 }
 
 export async function seedDemoData(): Promise<void> {

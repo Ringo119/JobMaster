@@ -16,7 +16,9 @@ const queryClient = new QueryClient({
 });
 
 // Seed the local database with demo data on first run, then mount the app.
-ensureSeeded().finally(() => {
+ensureSeeded()
+  .catch((e) => console.error('Failed to seed demo data', e))
+  .finally(() => {
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
       <QueryClientProvider client={queryClient}>
