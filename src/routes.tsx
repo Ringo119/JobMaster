@@ -6,6 +6,10 @@ import { JobDetailsPage } from './pages/JobDetailsPage';
 import { PlannerPage } from './pages/PlannerPage';
 import { ClientsPage } from './pages/ClientsPage';
 import { ClientDetailsPage } from './pages/ClientDetailsPage';
+import { InvoiceRegisterPage } from './pages/InvoiceRegisterPage';
+import { InvoicePage } from './pages/InvoicePage';
+import { PaymentsPage } from './pages/PaymentsPage';
+import { ReportsPage } from './pages/ReportsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { ComingSoonPage } from './pages/ComingSoonPage';
 
@@ -21,31 +25,18 @@ export const router = createBrowserRouter([
       { path: 'planner', element: <PlannerPage /> },
       { path: 'clients', element: <ClientsPage /> },
       { path: 'clients/:id', element: <ClientDetailsPage /> },
+      { path: 'invoices', element: <InvoiceRegisterPage /> },
+      { path: 'invoices/:id', element: <InvoicePage /> },
+      { path: 'payments', element: <PaymentsPage /> },
+      { path: 'reports', element: <ReportsPage /> },
       { path: 'settings', element: <SettingsPage /> },
       {
         path: 'calendar',
         element: (
           <ComingSoonPage
             title="Calendar"
+            phase="Phase 3"
             description="A day-by-day calendar view for arranging meetings. The Planner already covers scheduling for now."
-          />
-        ),
-      },
-      {
-        path: 'invoices',
-        element: (
-          <ComingSoonPage
-            title="Invoices"
-            description="Invoice generator and register with automatic VAT and PDF/email output."
-          />
-        ),
-      },
-      {
-        path: 'reports',
-        element: (
-          <ComingSoonPage
-            title="Reports"
-            description="Monthly turnover, outstanding money, fees by client and VAT owed."
           />
         ),
       },

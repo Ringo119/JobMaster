@@ -4,14 +4,18 @@ import { Card, StatCard } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { useJobs } from '../hooks/useJobs';
 import { useClients } from '../hooks/useClients';
+import { useInvoices } from '../hooks/useInvoices';
 import { formatUK, isDueWithin, isOverdue, daysUntil } from '../lib/dates';
+import { formatGBP } from '../lib/currency';
 import { visualStatus } from '../lib/jobStatus';
+import { isOutstanding, visualInvoiceStatus } from '../lib/invoiceStatus';
 import type { Job } from '../data/models/job';
 
 export function DashboardPage() {
   const navigate = useNavigate();
   const { data: jobs, isLoading } = useJobs();
   const { data: clients } = useClients();
+  const { data: invoices } = useInvoices();
 
   const clientNames = new Map((clients ?? []).map((c) => [c.id, c.name]));
 
@@ -35,6 +39,18 @@ export function DashboardPage() {
   const overdueCount = allJobs.filter((j) => visualStatus(j) === 'overdue').length;
   const activeCount = allJobs.filter((j) => j.status !== 'paid').length;
   const clientCount = clients?.length ?? 0;
+
+  const allInvoices = invoices ?? [];
+  // Outstanding = everything not yet paid. Awaiting payment = sent (or overdue), excluding drafts.
+  const outstandingPence = allInvoices
+    .filter(isOutstanding)
+    .reduce((sum, inv) => sum + inv.grossTotalPence, 0);
+  const awaitingPaymentPence = allInvoices
+    .filter((inv) => {
+      const v = visualInvoiceStatus(inv);
+      return v === 'sent' || v === 'overdue';
+    })
+    .reduce((sum, inv) => sum + inv.grossTotalPence, 0);
 
   const isUrgent = (j: Job): boolean =>
     j.isAsap || isOverdue(j.returnDate) || isDueWithin(j.returnDate, 3);
@@ -74,14 +90,16 @@ export function DashboardPage() {
       </div>
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <StatCard
-          label="Invoices Outstanding"
-          value={<span className="text-slate-400">£0</span>}
-          accent="text-slate-400"
-        />
-        <Card className="flex items-center p-4 text-sm text-slate-400">
-          Payments &amp; invoicing land in Phase 2.
-        </Card>
+        <Link to="/invoices" className="block">
+          <StatCard label="Invoices Outstanding" value={formatGBP(outstandingPence)} />
+        </Link>
+        <Link to="/payments" className="block">
+          <StatCard
+            label="Awaiting Payment"
+            value={formatGBP(awaitingPaymentPence)}
+            accent={awaitingPaymentPence > 0 ? 'text-amber-600' : 'text-slate-900'}
+          />
+        </Link>
       </div>
 
       <Card className="mb-6 p-5">

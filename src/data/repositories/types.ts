@@ -41,6 +41,18 @@ export interface InvoiceRepository {
   list(): Promise<Invoice[]>;
   listByClient(clientId: string): Promise<Invoice[]>;
   get(id: string): Promise<Invoice | undefined>;
+  getByJob(jobId: string): Promise<Invoice | undefined>;
+  /**
+   * Generate an invoice from a job: computes net/VAT/gross from the job's fee,
+   * reserves an invoice number, sets a due date from the client's payment terms,
+   * links the invoice to the job and advances the job's status to "invoiced".
+   * Throws if the job already has an invoice.
+   */
+  createFromJob(jobId: string): Promise<Invoice>;
+  /** Mark a draft invoice as sent to the client. */
+  markSent(id: string): Promise<Invoice>;
+  /** Mark an invoice as paid; also advances the linked job's status to "paid". */
+  markPaid(id: string): Promise<Invoice>;
 }
 
 export interface SettingsRepository {

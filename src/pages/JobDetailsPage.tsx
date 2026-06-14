@@ -9,6 +9,7 @@ import type { NewJob } from '../data/repositories/types';
 import { useJob, useCreateJob, useUpdateJob } from '../hooks/useJobs';
 import { useClients } from '../hooks/useClients';
 import { useSettings } from '../hooks/useSettings';
+import { useCreateInvoiceFromJob, useInvoiceByJob } from '../hooks/useInvoices';
 import { parsePoundsToPence, penceToPounds, formatGBP } from '../lib/currency';
 import { computeVat, formatVatRate } from '../lib/vat';
 import { PageHeader } from '../components/ui/PageHeader';
@@ -59,6 +60,8 @@ export function JobDetailsPage() {
   const { data: settings } = useSettings();
   const createJob = useCreateJob();
   const updateJob = useUpdateJob();
+  const { data: existingInvoice } = useInvoiceByJob(id);
+  const createInvoice = useCreateInvoiceFromJob();
 
   const [form, setForm] = useState<FormState>(() => blankForm(0.2));
   const [error, setError] = useState<string | null>(null);
@@ -104,6 +107,20 @@ export function JobDetailsPage() {
   );
 
   const isSaving = createJob.isPending || updateJob.isPending;
+
+  const handleCreateInvoice = async () => {
+    if (!id) return;
+    if (existingInvoice) {
+      navigate(`/invoices/${existingInvoice.id}`);
+      return;
+    }
+    try {
+      const invoice = await createInvoice.mutateAsync(id);
+      navigate(`/invoices/${invoice.id}`);
+    } catch {
+      setError('Could not create the invoice. Please try again.');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -375,10 +392,24 @@ export function JobDetailsPage() {
               {isSaving ? 'Saving…' : isEdit ? 'Save changes' : 'Create job'}
             </Button>
             <div>
-              <Button type="button" variant="secondary" disabled className="w-full">
-                Create Invoice
+              <Button
+                type="button"
+                variant="secondary"
+                className="w-full"
+                disabled={!isEdit || createInvoice.isPending}
+                onClick={handleCreateInvoice}
+              >
+                {existingInvoice
+                  ? 'View Invoice'
+                  : createInvoice.isPending
+                    ? 'Creating…'
+                    : 'Create Invoice'}
               </Button>
-              <p className="mt-1 text-center text-xs text-slate-400">Phase 2</p>
+              {!isEdit && (
+                <p className="mt-1 text-center text-xs text-slate-400">
+                  Save the job first
+                </p>
+              )}
             </div>
           </Card>
         </div>

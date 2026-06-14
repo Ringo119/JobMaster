@@ -4,7 +4,7 @@ interface NavItem {
   to: string;
   label: string;
   icon: string;
-  phase2?: boolean;
+  soon?: boolean;
 }
 
 const NAV: NavItem[] = [
@@ -12,8 +12,9 @@ const NAV: NavItem[] = [
   { to: '/jobs', label: 'Jobs', icon: '📁' },
   { to: '/planner', label: 'Planner', icon: '📅' },
   { to: '/clients', label: 'Clients', icon: '👥' },
-  { to: '/invoices', label: 'Invoices', icon: '💷', phase2: true },
-  { to: '/reports', label: 'Reports', icon: '📈', phase2: true },
+  { to: '/invoices', label: 'Invoices', icon: '💷' },
+  { to: '/payments', label: 'Payments', icon: '✅' },
+  { to: '/reports', label: 'Reports', icon: '📈' },
   { to: '/settings', label: 'Settings', icon: '⚙️' },
 ];
 
@@ -40,7 +41,7 @@ export function Sidebar() {
           >
             <span className="text-base">{item.icon}</span>
             <span className="flex-1">{item.label}</span>
-            {item.phase2 && (
+            {item.soon && (
               <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-slate-400">
                 Soon
               </span>
@@ -48,7 +49,7 @@ export function Sidebar() {
           </NavLink>
         ))}
       </nav>
-      <div className="px-5 py-4 text-xs text-slate-400">Phase 1 prototype</div>
+      <div className="px-5 py-4 text-xs text-slate-400">Phase 2</div>
     </aside>
   );
 }
