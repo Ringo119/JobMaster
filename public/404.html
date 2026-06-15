@@ -2,20 +2,8 @@
 <html lang="en-GB">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="refresh" content="0;url=/TenderTrack/" />
     <title>TenderTrack</title>
-    <script>
-      // Redirect SPA routes to index.html via query string so GitHub Pages
-      // doesn't 404 on deep links. Paired with the redirect handler in index.html.
-      // Technique: https://github.com/rafgraph/spa-github-pages
-      var l = window.location;
-      l.replace(
-        l.protocol + '//' + l.host + l.pathname.split('/').slice(0, 2).join('/') +
-        '/?p=/' + l.pathname.slice(1).split('/').slice(1).join('/').replace(/&/g, '~and~') +
-        (l.search ? '&q=' + l.search.slice(1).replace(/&/g, '~and~') : '') +
-        l.hash
-      );
-    </script>
   </head>
   <body></body>
 </html>

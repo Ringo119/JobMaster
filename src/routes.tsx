@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router-dom';
+import { createHashRouter } from 'react-router-dom';
 import { AppLayout } from './components/layout/AppLayout';
 import { DashboardPage } from './pages/DashboardPage';
 import { JobRegisterPage } from './pages/JobRegisterPage';
@@ -13,7 +13,7 @@ import { ReportsPage } from './pages/ReportsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { CalendarPage } from './pages/CalendarPage';
 
-export const router = createBrowserRouter([
+export const router = createHashRouter([
   {
     path: '/',
     element: <AppLayout />,
@@ -33,4 +33,4 @@ export const router = createBrowserRouter([
       { path: 'settings', element: <SettingsPage /> },
     ],
   },
-], { basename: import.meta.env.BASE_URL });
+]);

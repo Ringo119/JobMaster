@@ -4,25 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TenderTrack</title>
-    <script>
-      // Restore path that was encoded as a query string by 404.html
-      // so React Router sees the original URL.
-      (function (l) {
-        if (l.search[1] === '/') {
-          var decoded = l.search
-            .slice(1)
-            .split('&')
-            .map(function (s) { return s.replace(/~and~/g, '&'); })
-            .join('?');
-          window.history.replaceState(null, null, l.pathname.slice(0, -1) + decoded + l.hash);
-        }
-        var p = new URLSearchParams(l.search).get('p');
-        if (p) {
-          var q = new URLSearchParams(l.search).get('q');
-          window.history.replaceState(null, null, l.pathname + p + (q ? '?' + q : '') + l.hash);
-        }
-      }(window.location));
-    </script>
   </head>
   <body>
     <div id="root"></div>
