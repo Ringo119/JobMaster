@@ -17,8 +17,8 @@ export default {
         ],
       },
       colors: {
-        // Job Master brand palette.
-        navy: '#0d1b2a', // Deep Navy
+        // Job Master brand palette (per brand guide).
+        navy: '#00182a', // Deep Navy
         slategray: '#647488', // Slate Gray
         success: '#22c55e', // Success Green
         alert: '#f59e0b', // Alert Orange
@@ -26,7 +26,8 @@ export default {
         brand: {
           50: '#eff6ff',
           100: '#dbeafe',
-          600: '#2563eb',
+          500: '#3b76ed',
+          600: '#2563e8',
           700: '#1d4ed8',
           800: '#1e40af',
           900: '#1e3a8a',
