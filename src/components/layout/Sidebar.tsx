@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import { Logo } from './Logo';
 
 interface NavItem {
   to: string;
@@ -23,8 +24,11 @@ export function Sidebar() {
   return (
     <aside className="flex w-60 shrink-0 flex-col border-r border-slate-200 bg-white">
       <div className="flex items-center gap-2 px-5 py-5">
-        <span className="text-xl">📐</span>
-        <span className="text-lg font-semibold text-slate-900">TenderTrack</span>
+        <Logo size={28} />
+        <span className="text-lg font-semibold tracking-tight">
+          <span className="text-navy">Job</span>{' '}
+          <span className="text-success">Master</span>
+        </span>
       </div>
       <nav className="flex-1 space-y-1 px-3">
         {NAV.map((item) => (
@@ -50,7 +54,7 @@ export function Sidebar() {
           </NavLink>
         ))}
       </nav>
-      <div className="px-5 py-4 text-xs text-slate-400">Phase 3</div>
+      <div className="px-5 py-4 text-xs text-slate-400">v3.0</div>
     </aside>
   );
 }

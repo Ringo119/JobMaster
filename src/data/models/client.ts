@@ -7,7 +7,7 @@ export const clientSchema = z.object({
   email: z.string().email('Enter a valid email').or(z.literal('')).optional(),
   phone: z.string().optional(),
   address: z.string().optional(),
-  /** Default payment terms in days (e.g. 14 / 30). Used by the Phase 2 payments screen. */
+  /** Default payment terms in days (e.g. 14 / 30). Used by the payments screen. */
   paymentTermsDays: z.number().int().nonnegative().optional(),
   createdAt: z.string(),
 });

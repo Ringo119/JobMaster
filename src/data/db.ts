@@ -10,7 +10,7 @@ import type { JobDocument } from './models/document';
  * It is intentionally hidden behind the repository interfaces in
  * ./repositories so that a future backend can be swapped in without touching the UI.
  */
-export class TenderTrackDB extends Dexie {
+export class JobMasterDB extends Dexie {
   clients!: Table<Client, string>;
   jobs!: Table<Job, string>;
   invoices!: Table<Invoice, string>;
@@ -18,7 +18,7 @@ export class TenderTrackDB extends Dexie {
   documents!: Table<JobDocument, string>;
 
   constructor() {
-    super('tendertrack');
+    super('jobmaster');
     this.version(1).stores({
       // Indexes chosen to support the Job Register (filter by status, sort by
       // return date, lookups by client) and Clients screens.
@@ -27,11 +27,11 @@ export class TenderTrackDB extends Dexie {
       invoices: 'id, invoiceNumber, jobId, clientId, status',
       settings: 'id',
     });
-    // v2: per-job document attachments (Phase 3).
+    // v2: per-job document attachments (added in v3.0).
     this.version(2).stores({
       documents: 'id, jobId, createdAt',
     });
   }
 }
 
-export const db = new TenderTrackDB();
+export const db = new JobMasterDB();

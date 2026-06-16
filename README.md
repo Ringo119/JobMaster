@@ -1,10 +1,14 @@
-# TenderTrack
+# Job Master
 
-A job-planning and invoicing app for a quantity surveyor / estimator, replacing two
-Excel spreadsheets (a Gantt-style work programme and a job/invoice register) with a
-single tool. Design principle: *"Excel, but it updates itself and tells me what's due."*
+*Plan. Manage. Invoice. Get paid.*
 
-This repository contains **Phase 1 + Phase 2 + Phase 3**.
+The all-in-one app to plan jobs, track progress, manage clients, create invoices and
+get paid — a job-planning and invoicing app for a quantity surveyor / estimator,
+replacing two Excel spreadsheets (a Gantt-style work programme and a job/invoice
+register) with a single tool. Design principle: *"Excel, but it updates itself and
+tells me what's due."*
+
+**Current version: v3.0.**
 
 ## Running it
 
@@ -40,17 +44,17 @@ change. Money is stored as integer **pence**; dates as ISO strings formatted to 
 
 ## What's built
 
-### Phase 1 — planning
+### v1.0 — planning
 - **Dashboard**, **Job Register**, **Job Details** (live Net/VAT/Total preview, ASAP),
   **Programme Planner** (CSS-grid Gantt), **Clients**, **Settings**.
 
-### Phase 2 — invoicing & money
+### v2.0 — invoicing & money
 - **Create Invoice** from a job (auto number, VAT from the fee, due date from client
   terms), printable **Invoice document**, **Invoice Register** (traffic-light status),
   **Payments**, **Reports**, and live Dashboard money tiles. Status automation: invoice
   created → job *Invoiced*; marked paid → job *Paid*.
 
-### Phase 3 — scheduling, reminders & documents
+### v3.0 — scheduling, reminders & documents
 - **Calendar** — monthly view of jobs by return date, with an ASAP/unscheduled strip.
 - **Drag-to-reschedule** — drag a bar on the Planner to shift a job's dates; persists
   immediately (a plain click still opens the job).

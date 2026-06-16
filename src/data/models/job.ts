@@ -38,7 +38,7 @@ export const jobSchema = z.object({
   isAsap: z.boolean(),
   estimatedDays: z.number().int().positive().optional(),
   notes: z.string().optional(),
-  /** Link to a generated invoice (Phase 2). */
+  /** Link to a generated invoice. */
   invoiceId: z.string().nullable().optional(),
   createdAt: z.string(),
 });

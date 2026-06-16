@@ -245,7 +245,7 @@ export function ClientDetailsPage() {
         </div>
         {!invoices || invoices.length === 0 ? (
           <div className="p-6 text-center text-sm text-slate-500">
-            No invoices yet (Phase 2).
+            No invoices yet.
           </div>
         ) : (
           <ul className="divide-y divide-slate-100">

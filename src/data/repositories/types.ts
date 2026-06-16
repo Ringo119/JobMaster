@@ -7,9 +7,9 @@ import type { JobDocument } from '../models/document';
 /**
  * Repository interfaces — the seam between the UI and persistence.
  *
- * The UI depends ONLY on these interfaces (via the hooks in src/hooks). In
- * Phase 1 they are implemented against Dexie/IndexedDB. To move to Supabase in
- * Phase 2, provide new implementations and re-point src/data/repositories/index.ts;
+ * The UI depends ONLY on these interfaces (via the hooks in src/hooks). They
+ * are currently implemented against Dexie/IndexedDB. To move to Supabase later,
+ * provide new implementations and re-point src/data/repositories/index.ts;
  * no screen or component needs to change.
  */
 

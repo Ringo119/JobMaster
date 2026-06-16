@@ -49,7 +49,7 @@ export function RemindersBell() {
     if (permission === 'granted' && hasUrgent) {
       notifiedRef.current = true;
       showNotification(
-        'TenderTrack',
+        'Job Master',
         `${urgentCount} urgent item(s) need your attention`,
       );
     }
