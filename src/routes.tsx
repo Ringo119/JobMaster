@@ -13,24 +13,28 @@ import { ReportsPage } from './pages/ReportsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { CalendarPage } from './pages/CalendarPage';
 
-export const router = createBrowserRouter([
-  {
-    path: '/',
-    element: <AppLayout />,
-    children: [
-      { index: true, element: <DashboardPage /> },
-      { path: 'jobs', element: <JobRegisterPage /> },
-      { path: 'jobs/new', element: <JobDetailsPage /> },
-      { path: 'jobs/:id', element: <JobDetailsPage /> },
-      { path: 'planner', element: <PlannerPage /> },
-      { path: 'calendar', element: <CalendarPage /> },
-      { path: 'clients', element: <ClientsPage /> },
-      { path: 'clients/:id', element: <ClientDetailsPage /> },
-      { path: 'invoices', element: <InvoiceRegisterPage /> },
-      { path: 'invoices/:id', element: <InvoicePage /> },
-      { path: 'payments', element: <PaymentsPage /> },
-      { path: 'reports', element: <ReportsPage /> },
-      { path: 'settings', element: <SettingsPage /> },
-    ],
-  },
-]);
+export const router = createBrowserRouter(
+  [
+    {
+      path: '/',
+      element: <AppLayout />,
+      children: [
+        { index: true, element: <DashboardPage /> },
+        { path: 'jobs', element: <JobRegisterPage /> },
+        { path: 'jobs/new', element: <JobDetailsPage /> },
+        { path: 'jobs/:id', element: <JobDetailsPage /> },
+        { path: 'planner', element: <PlannerPage /> },
+        { path: 'calendar', element: <CalendarPage /> },
+        { path: 'clients', element: <ClientsPage /> },
+        { path: 'clients/:id', element: <ClientDetailsPage /> },
+        { path: 'invoices', element: <InvoiceRegisterPage /> },
+        { path: 'invoices/:id', element: <InvoicePage /> },
+        { path: 'payments', element: <PaymentsPage /> },
+        { path: 'reports', element: <ReportsPage /> },
+        { path: 'settings', element: <SettingsPage /> },
+      ],
+    },
+  ],
+  // Run correctly under the GitHub Pages sub-path (Vite's base). Empty in dev.
+  { basename: import.meta.env.BASE_URL.replace(/\/$/, '') },
+);
