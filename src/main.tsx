@@ -30,7 +30,7 @@ class ErrorBoundary extends React.Component<
     if (this.state.error) {
       return (
         <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
-          <h2 style={{ color: '#ef4444' }}>TenderTrack failed to start</h2>
+          <h2 style={{ color: '#ef4444' }}>Job Master failed to start</h2>
           <pre style={{ background: '#f1f5f9', padding: '1rem', overflow: 'auto', fontSize: '0.8rem' }}>
             {this.state.error.message}
             {'\n\n'}
