@@ -20,20 +20,31 @@ const LABEL_COL = 180;
 const DAY_W = 34; // fixed day-column width so drag maps pixels → days exactly
 const END_PADDING_DAYS = 4;
 
-/** A job's effective bar start/end as Dates, or null if it can't be placed. */
+const DEFAULT_SPAN_DAYS = 5;
+
+/**
+ * A job's effective bar start/end as Dates, or null if it can't be placed.
+ *
+ * Duration is driven by the start date and the task's estimated days: a job's
+ * bar runs from its start date for `estimatedDays`. The return date is only
+ * consulted to size the bar when no estimate is provided.
+ */
 function jobBarRange(job: Job): { start: Date; end: Date } | null {
   const start = job.startDate ? parseISO(job.startDate) : null;
   const end = job.returnDate ? parseISO(job.returnDate) : null;
+  const hasEstimate = typeof job.estimatedDays === 'number' && job.estimatedDays > 0;
 
-  if (start && end) return { start, end };
-  if (end) {
-    // Derive a start from the estimate when only a return date is known.
-    const span = job.estimatedDays && job.estimatedDays > 0 ? job.estimatedDays : 5;
-    return { start: addDays(end, -span), end };
-  }
   if (start) {
-    const span = job.estimatedDays && job.estimatedDays > 0 ? job.estimatedDays : 5;
-    return { start, end: addDays(start, span) };
+    // Prefer the estimate from the start date; fall back to the return date,
+    // then to a default span when neither is available.
+    if (hasEstimate) return { start, end: addDays(start, job.estimatedDays!) };
+    if (end) return { start, end };
+    return { start, end: addDays(start, DEFAULT_SPAN_DAYS) };
+  }
+  if (end) {
+    // Only a return date — derive a start from the estimate (or default span).
+    const span = hasEstimate ? job.estimatedDays! : DEFAULT_SPAN_DAYS;
+    return { start: addDays(end, -span), end };
   }
   return null;
 }
