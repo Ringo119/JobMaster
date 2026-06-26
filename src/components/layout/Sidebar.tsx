@@ -54,7 +54,7 @@ export function Sidebar() {
           </NavLink>
         ))}
       </nav>
-      <div className="px-5 py-4 text-xs text-white/40">v3.0</div>
+      <div className="px-5 py-4 text-xs text-white/40">v3.1</div>
     </aside>
   );
 }
