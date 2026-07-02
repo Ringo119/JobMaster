@@ -8,7 +8,7 @@ replacing two Excel spreadsheets (a Gantt-style work programme and a job/invoice
 register) with a single tool. Design principle: *"Excel, but it updates itself and
 tells me what's due."*
 
-**Current version: v3.0.**
+**Current version: v3.2.**
 
 ## Running it
 
@@ -64,6 +64,13 @@ change. Money is stored as integer **pence**; dates as ISO strings formatted to 
   (stored locally in IndexedDB), with download and remove.
 - **Email Client** — the invoice opens a pre-filled email via `mailto:`.
 
+### v3.2 — job breakdown on the Planner
+- **Sub-tasks** — expand a Planner row to break a job into its own planned steps
+  (take-off, pricing, write-up…), each a draggable bar with a start date and
+  duration. Add/edit tasks inline on the Planner, tick them off as done (the row
+  shows a done/total badge), and dragging the job's bar moves its whole task
+  plan with it.
+
 ## Deferred / future
 
 A hosted backend (Supabase) for multi-device sync and real email automation; the
@@ -77,7 +84,7 @@ src/
   data/
     models/         Zod schemas + types (the data model)
     repositories/   interfaces + Dexie implementations (backend swap point)
-    db.ts, seed.ts  Dexie database (v2: + documents) + demo data
+    db.ts, seed.ts  Dexie database (v2: + documents, v3: + tasks) + demo data
   hooks/            TanStack Query hooks wrapping the repositories
   lib/              currency, dates, VAT, job/invoice status, reminders, notify
   components/       layout (sidebar, reminders bell) + shared UI + job widgets

@@ -87,7 +87,7 @@ export function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
             </NavLink>
           ))}
         </nav>
-        <div className="px-5 py-4 text-xs text-white/40">v3.1</div>
+        <div className="px-5 py-4 text-xs text-white/40">v3.2</div>
       </aside>
     </>
   );
