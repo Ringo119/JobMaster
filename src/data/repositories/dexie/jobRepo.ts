@@ -54,7 +54,11 @@ export class DexieJobRepository implements JobRepository {
   }
 
   async remove(id: string): Promise<void> {
-    await db.jobs.delete(id);
+    // Removing a job also removes its planner sub-tasks.
+    await db.transaction('rw', db.jobs, db.tasks, async () => {
+      await db.jobs.delete(id);
+      await db.tasks.where('jobId').equals(id).delete();
+    });
   }
 }
 

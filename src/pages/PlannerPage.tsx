@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   addDays,
@@ -9,12 +9,21 @@ import {
 } from 'date-fns';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Card } from '../components/ui/Card';
+import { TaskEditor, type TaskDraft } from '../components/planner/TaskEditor';
 import { useJobs, useUpdateJob } from '../hooks/useJobs';
 import { useClients } from '../hooks/useClients';
+import {
+  useTasks,
+  useCreateTask,
+  useUpdateTask,
+  useRemoveTask,
+  useShiftJobTasks,
+} from '../hooks/useTasks';
 import { formatGBP } from '../lib/currency';
 import { toISODate } from '../lib/dates';
 import { STATUS_STYLES, visualStatus, type VisualStatus } from '../lib/jobStatus';
 import type { Job } from '../data/models/job';
+import type { JobTask } from '../data/models/task';
 
 const LABEL_COL = 180;
 const DAY_W = 34; // fixed day-column width so drag maps pixels → days exactly
@@ -49,6 +58,12 @@ function jobBarRange(job: Job): { start: Date; end: Date } | null {
   return null;
 }
 
+/** A task's bar start/end (end inclusive) as Dates. */
+function taskBarRange(task: JobTask): { start: Date; end: Date } {
+  const start = parseISO(task.startDate);
+  return { start, end: addDays(start, task.durationDays - 1) };
+}
+
 /** Shift whichever real dates a job has by a number of days. */
 function shiftJobDates(job: Job, deltaDays: number): Partial<Job> {
   const patch: Partial<Job> = {};
@@ -66,24 +81,48 @@ const LEGEND: { status: VisualStatus; label: string }[] = [
 ];
 
 interface DragState {
-  jobId: string;
+  id: string;
   startX: number;
   dayDelta: number;
   moved: boolean;
 }
 
+/** Which task is being edited inline; taskId null means "new task for jobId". */
+interface EditorState {
+  jobId: string;
+  taskId: string | null;
+}
+
 export function PlannerPage() {
   const { data: jobs, isLoading } = useJobs();
   const { data: clients } = useClients();
+  const { data: tasks } = useTasks();
   const updateJob = useUpdateJob();
+  const createTask = useCreateTask();
+  const updateTask = useUpdateTask();
+  const removeTask = useRemoveTask();
+  const shiftJobTasks = useShiftJobTasks();
   const navigate = useNavigate();
 
-  const [drag, setDrag] = useState<DragState | null>(null);
+  const [jobDrag, setJobDrag] = useState<DragState | null>(null);
+  const [taskDrag, setTaskDrag] = useState<DragState | null>(null);
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
+  const [editor, setEditor] = useState<EditorState | null>(null);
 
   const clientNames = useMemo(
     () => new Map((clients ?? []).map((c) => [c.id, c.name])),
     [clients],
   );
+
+  const tasksByJob = useMemo(() => {
+    const map = new Map<string, JobTask[]>();
+    for (const task of tasks ?? []) {
+      const list = map.get(task.jobId);
+      if (list) list.push(task);
+      else map.set(task.jobId, [task]);
+    }
+    return map;
+  }, [tasks]);
 
   const model = useMemo(() => {
     const all = jobs ?? [];
@@ -103,6 +142,15 @@ export function PlannerPage() {
       if (range.start < minDate) minDate = range.start;
       if (range.end > maxDate) maxDate = range.end;
     }
+    // Widen the window so every plotted job's task bars fit too (collapsed or
+    // not — keeps the grid from reshaping when a row is expanded).
+    for (const { job } of datable) {
+      for (const task of tasksByJob.get(job.id) ?? []) {
+        const { start, end } = taskBarRange(task);
+        if (start < minDate) minDate = start;
+        if (end > maxDate) maxDate = end;
+      }
+    }
 
     const windowStart = startOfWeek(minDate, { weekStartsOn: 1 });
     const windowEnd = addDays(maxDate, END_PADDING_DAYS);
@@ -117,7 +165,7 @@ export function PlannerPage() {
     });
 
     return { asapJobs, datable, windowStart, totalDays };
-  }, [jobs, clientNames]);
+  }, [jobs, clientNames, tasksByJob]);
 
   if (isLoading) {
     return (
@@ -144,15 +192,23 @@ export function PlannerPage() {
   const days = Array.from({ length: totalDays }, (_, i) => addDays(windowStart, i));
   const gridTemplateColumns = `${LABEL_COL}px repeat(${totalDays}, ${DAY_W}px)`;
 
-  const handlePointerDown = (e: React.PointerEvent, job: Job) => {
+  const startDrag = (
+    e: React.PointerEvent,
+    id: string,
+    setState: React.Dispatch<React.SetStateAction<DragState | null>>,
+  ) => {
     e.preventDefault();
     (e.currentTarget as Element).setPointerCapture(e.pointerId);
-    setDrag({ jobId: job.id, startX: e.clientX, dayDelta: 0, moved: false });
+    setState({ id, startX: e.clientX, dayDelta: 0, moved: false });
   };
 
-  const handlePointerMove = (e: React.PointerEvent, job: Job) => {
-    setDrag((d) => {
-      if (!d || d.jobId !== job.id) return d;
+  const moveDrag = (
+    e: React.PointerEvent,
+    id: string,
+    setState: React.Dispatch<React.SetStateAction<DragState | null>>,
+  ) => {
+    setState((d) => {
+      if (!d || d.id !== id) return d;
       const dayDelta = Math.round((e.clientX - d.startX) / DAY_W);
       const moved = d.moved || Math.abs(e.clientX - d.startX) > 3;
       if (dayDelta === d.dayDelta && moved === d.moved) return d;
@@ -160,27 +216,73 @@ export function PlannerPage() {
     });
   };
 
-  const handlePointerUp = (job: Job) => {
-    setDrag((d) => {
-      if (!d || d.jobId !== job.id) return null;
-      if (d.dayDelta !== 0) {
-        const patch = shiftJobDates(job, d.dayDelta);
-        if (Object.keys(patch).length > 0) {
-          updateJob.mutate({ id: job.id, patch });
+  const handleJobPointerUp = (job: Job) => {
+    const d = jobDrag;
+    setJobDrag(null);
+    if (!d || d.id !== job.id) return;
+    if (d.dayDelta !== 0) {
+      const patch = shiftJobDates(job, d.dayDelta);
+      if (Object.keys(patch).length > 0) {
+        updateJob.mutate({ id: job.id, patch });
+        // Keep the job's internal plan in step with its bar.
+        if ((tasksByJob.get(job.id) ?? []).length > 0) {
+          shiftJobTasks.mutate({ jobId: job.id, deltaDays: d.dayDelta });
         }
-      } else if (!d.moved) {
-        // A plain click opens the job.
-        navigate(`/jobs/${job.id}`);
       }
-      return null;
+    } else if (!d.moved) {
+      // A plain click opens the job.
+      navigate(`/jobs/${job.id}`);
+    }
+  };
+
+  const handleTaskPointerUp = (task: JobTask) => {
+    const d = taskDrag;
+    setTaskDrag(null);
+    if (!d || d.id !== task.id) return;
+    if (d.dayDelta !== 0) {
+      updateTask.mutate({
+        id: task.id,
+        patch: { startDate: toISODate(addDays(parseISO(task.startDate), d.dayDelta)) },
+      });
+    } else if (!d.moved) {
+      // A plain click opens the inline editor.
+      setEditor({ jobId: task.jobId, taskId: task.id });
+    }
+  };
+
+  const toggleExpanded = (jobId: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(jobId)) next.delete(jobId);
+      else next.add(jobId);
+      return next;
     });
+    // Collapsing a row closes any editor it contained.
+    setEditor((ed) => (ed?.jobId === jobId ? null : ed));
+  };
+
+  const handleEditorSave = (draft: TaskDraft) => {
+    if (!editor) return;
+    if (editor.taskId) {
+      updateTask.mutate({ id: editor.taskId, patch: draft });
+    } else {
+      createTask.mutate({ ...draft, jobId: editor.jobId });
+    }
+    setEditor(null);
+  };
+
+  const handleEditorDelete = () => {
+    if (!editor?.taskId) return;
+    if (!window.confirm('Delete this task?')) return;
+    removeTask.mutate(editor.taskId);
+    setEditor(null);
   };
 
   return (
     <div>
       <PageHeader
         title="Planner"
-        subtitle="Your jobs across the weeks ahead — drag a bar to reschedule."
+        subtitle="Your jobs across the weeks ahead — drag a bar to reschedule, expand a row to break the job into tasks."
       />
 
       {/* Legend */}
@@ -191,6 +293,10 @@ export function PlannerPage() {
             {label}
           </span>
         ))}
+        <span className="inline-flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-4 rounded bg-brand-500" />
+          Task
+        </span>
       </div>
 
       {asapJobs.length > 0 && (
@@ -271,51 +377,200 @@ export function PlannerPage() {
             const endCol = startCol + barLength;
             const style = STATUS_STYLES[visualStatus(job)];
             const clientName = clientNames.get(job.clientId) ?? 'Unknown';
-            const isDragging = drag?.jobId === job.id;
-            const offsetX = isDragging ? drag.dayDelta * DAY_W : 0;
+            const isDragging = jobDrag?.id === job.id;
+            const offsetX = isDragging ? jobDrag.dayDelta * DAY_W : 0;
+
+            const jobTasks = tasksByJob.get(job.id) ?? [];
+            const doneCount = jobTasks.filter((t) => t.done).length;
+            const isExpanded = expanded.has(job.id);
 
             return (
-              <div
-                key={job.id}
-                className="grid items-center border-b border-slate-100 last:border-0"
-                style={{ gridTemplateColumns }}
-              >
-                <Link
-                  to={`/jobs/${job.id}`}
-                  className="sticky left-0 z-10 block min-w-0 truncate bg-white py-2 pr-2 text-xs hover:text-brand-600"
-                  title={`${clientName} · #${job.jobNumber}${job.project ? ` · ${job.project}` : ''}`}
-                >
-                  <span className="font-medium text-slate-700">{clientName}</span>
-                  <span className="ml-1 text-slate-400">#{job.jobNumber}</span>
-                  {job.project && (
-                    <span className="block truncate text-slate-500">{job.project}</span>
-                  )}
-                </Link>
-
-                {/* The bar — draggable to reschedule; a plain click opens the job. */}
+              <Fragment key={job.id}>
                 <div
-                  role="button"
-                  tabIndex={0}
-                  onPointerDown={(e) => handlePointerDown(e, job)}
-                  onPointerMove={(e) => handlePointerMove(e, job)}
-                  onPointerUp={() => handlePointerUp(job)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') navigate(`/jobs/${job.id}`);
-                  }}
-                  className={`my-1 flex h-6 touch-none items-center overflow-hidden rounded px-2 ${style.bar} ${
-                    isDragging ? 'cursor-grabbing opacity-90 ring-2 ring-slate-900/20' : 'cursor-grab'
-                  }`}
-                  style={{
-                    gridColumn: `${startCol} / ${endCol}`,
-                    transform: offsetX ? `translateX(${offsetX}px)` : undefined,
-                  }}
-                  title={`${style.label} · ${formatGBP(job.feeNetPence)} — drag to reschedule`}
+                  className="grid items-center border-b border-slate-100 last:border-0"
+                  style={{ gridTemplateColumns }}
                 >
-                  <span className="truncate text-xs text-white">
-                    {job.project || formatGBP(job.feeNetPence)}
-                  </span>
+                  <div className="sticky left-0 z-10 flex min-w-0 items-center gap-1 bg-white py-2 pr-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleExpanded(job.id)}
+                      aria-label={isExpanded ? 'Hide tasks' : 'Show tasks'}
+                      aria-expanded={isExpanded}
+                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-[10px] leading-none text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                    >
+                      {isExpanded ? '▼' : '▶'}
+                    </button>
+                    <Link
+                      to={`/jobs/${job.id}`}
+                      className="block min-w-0 flex-1 truncate text-xs hover:text-brand-600"
+                      title={`${clientName} · #${job.jobNumber}${job.project ? ` · ${job.project}` : ''}`}
+                    >
+                      <span className="font-medium text-slate-700">{clientName}</span>
+                      <span className="ml-1 text-slate-400">#{job.jobNumber}</span>
+                      {job.project && (
+                        <span className="block truncate text-slate-500">{job.project}</span>
+                      )}
+                    </Link>
+                    {jobTasks.length > 0 && (
+                      <span
+                        className="shrink-0 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500"
+                        title={`${doneCount} of ${jobTasks.length} tasks done`}
+                      >
+                        {doneCount}/{jobTasks.length}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* The bar — draggable to reschedule; a plain click opens the job. */}
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onPointerDown={(e) => startDrag(e, job.id, setJobDrag)}
+                    onPointerMove={(e) => moveDrag(e, job.id, setJobDrag)}
+                    onPointerUp={() => handleJobPointerUp(job)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') navigate(`/jobs/${job.id}`);
+                    }}
+                    className={`my-1 flex h-6 touch-none items-center overflow-hidden rounded px-2 ${style.bar} ${
+                      isDragging ? 'cursor-grabbing opacity-90 ring-2 ring-slate-900/20' : 'cursor-grab'
+                    }`}
+                    style={{
+                      gridColumn: `${startCol} / ${endCol}`,
+                      transform: offsetX ? `translateX(${offsetX}px)` : undefined,
+                    }}
+                    title={`${style.label} · ${formatGBP(job.feeNetPence)} — drag to reschedule`}
+                  >
+                    <span className="truncate text-xs text-white">
+                      {job.project || formatGBP(job.feeNetPence)}
+                    </span>
+                  </div>
                 </div>
-              </div>
+
+                {/* Task breakdown rows */}
+                {isExpanded && (
+                  <>
+                    {jobTasks.map((task) => {
+                      if (editor?.taskId === task.id) {
+                        return (
+                          <div key={task.id} className="border-b border-slate-100">
+                            <TaskEditor
+                              initial={{
+                                name: task.name,
+                                startDate: task.startDate,
+                                durationDays: task.durationDays,
+                                done: task.done,
+                              }}
+                              onSave={handleEditorSave}
+                              onCancel={() => setEditor(null)}
+                              onDelete={handleEditorDelete}
+                              saving={updateTask.isPending}
+                            />
+                          </div>
+                        );
+                      }
+
+                      const taskRange = taskBarRange(task);
+                      const taskStartCol =
+                        2 + differenceInCalendarDays(taskRange.start, windowStart);
+                      const taskEndCol = taskStartCol + task.durationDays;
+                      const isTaskDragging = taskDrag?.id === task.id;
+                      const taskOffsetX = isTaskDragging ? taskDrag.dayDelta * DAY_W : 0;
+
+                      return (
+                        <div
+                          key={task.id}
+                          className="grid items-center border-b border-slate-50"
+                          style={{ gridTemplateColumns }}
+                        >
+                          <div className="sticky left-0 z-10 flex min-w-0 items-center gap-2 bg-white py-1 pl-7 pr-2">
+                            <input
+                              type="checkbox"
+                              checked={task.done}
+                              onChange={() =>
+                                updateTask.mutate({
+                                  id: task.id,
+                                  patch: { done: !task.done },
+                                })
+                              }
+                              aria-label={`Mark "${task.name}" ${task.done ? 'not done' : 'done'}`}
+                              className="h-3.5 w-3.5 shrink-0 rounded border-slate-300 text-brand-600 focus:ring-brand-600"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setEditor({ jobId: job.id, taskId: task.id })}
+                              className={`min-w-0 truncate text-left text-xs hover:text-brand-600 ${
+                                task.done ? 'text-slate-400 line-through' : 'text-slate-600'
+                              }`}
+                              title={`${task.name} · ${task.durationDays} day${
+                                task.durationDays === 1 ? '' : 's'
+                              } — click to edit`}
+                            >
+                              {task.name}
+                            </button>
+                          </div>
+
+                          {/* Task bar — drag to reschedule; a plain click edits. */}
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            onPointerDown={(e) => startDrag(e, task.id, setTaskDrag)}
+                            onPointerMove={(e) => moveDrag(e, task.id, setTaskDrag)}
+                            onPointerUp={() => handleTaskPointerUp(task)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter')
+                                setEditor({ jobId: job.id, taskId: task.id });
+                            }}
+                            className={`my-0.5 flex h-5 touch-none items-center overflow-hidden rounded px-1.5 ${
+                              task.done ? 'bg-slate-400' : 'bg-brand-500'
+                            } ${
+                              isTaskDragging
+                                ? 'cursor-grabbing opacity-90 ring-2 ring-slate-900/20'
+                                : 'cursor-grab'
+                            }`}
+                            style={{
+                              gridColumn: `${taskStartCol} / ${taskEndCol}`,
+                              transform: taskOffsetX
+                                ? `translateX(${taskOffsetX}px)`
+                                : undefined,
+                            }}
+                            title={`${task.name} — drag to reschedule, click to edit`}
+                          >
+                            <span className="truncate text-[11px] text-white">
+                              {task.name}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {editor && editor.jobId === job.id && editor.taskId === null ? (
+                      <div className="border-b border-slate-100">
+                        <TaskEditor
+                          initial={{
+                            name: '',
+                            startDate: toISODate(range.start),
+                            durationDays: 1,
+                            done: false,
+                          }}
+                          onSave={handleEditorSave}
+                          onCancel={() => setEditor(null)}
+                          saving={createTask.isPending}
+                        />
+                      </div>
+                    ) : (
+                      <div className="border-b border-slate-100">
+                        <button
+                          type="button"
+                          onClick={() => setEditor({ jobId: job.id, taskId: null })}
+                          className="sticky left-0 z-10 block bg-white py-1.5 pl-7 pr-2 text-xs font-medium text-brand-600 hover:text-brand-700"
+                        >
+                          + Add task
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </Fragment>
             );
           })}
           </div>

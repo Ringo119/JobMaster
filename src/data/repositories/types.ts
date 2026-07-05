@@ -3,6 +3,7 @@ import type { Job, JobStatus } from '../models/job';
 import type { Invoice } from '../models/invoice';
 import type { Settings } from '../models/settings';
 import type { JobDocument } from '../models/document';
+import type { JobTask } from '../models/task';
 
 /**
  * Repository interfaces — the seam between the UI and persistence.
@@ -65,4 +66,18 @@ export interface DocumentRepository {
   listByJob(jobId: string): Promise<JobDocument[]>;
   create(data: Omit<JobDocument, 'id' | 'createdAt'>): Promise<JobDocument>;
   remove(id: string): Promise<void>;
+}
+
+/** Data needed to create a task; id/createdAt are assigned by the repo. */
+export type NewTask = Omit<JobTask, 'id' | 'createdAt'>;
+
+export interface TaskRepository {
+  /** All tasks across every job — the Planner groups them by job itself. */
+  list(): Promise<JobTask[]>;
+  listByJob(jobId: string): Promise<JobTask[]>;
+  create(data: NewTask): Promise<JobTask>;
+  update(id: string, patch: Partial<JobTask>): Promise<JobTask>;
+  remove(id: string): Promise<void>;
+  /** Shift all of a job's tasks by N days — used when the job's bar is dragged. */
+  shiftByJob(jobId: string, deltaDays: number): Promise<void>;
 }

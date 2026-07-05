@@ -166,11 +166,17 @@ export async function ensureSeeded(): Promise<void> {
 
 /** Wipe everything and reseed — used by the "Reset demo data" button in Settings. */
 export async function resetDemoData(): Promise<void> {
-  await db.transaction('rw', db.clients, db.jobs, db.invoices, db.settings, async () => {
-    await db.clients.clear();
-    await db.jobs.clear();
-    await db.invoices.clear();
-    await db.settings.clear();
-  });
+  await db.transaction(
+    'rw',
+    [db.clients, db.jobs, db.invoices, db.settings, db.documents, db.tasks],
+    async () => {
+      await db.clients.clear();
+      await db.jobs.clear();
+      await db.invoices.clear();
+      await db.settings.clear();
+      await db.documents.clear();
+      await db.tasks.clear();
+    },
+  );
   await seedDemoData();
 }
