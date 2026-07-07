@@ -37,19 +37,16 @@ const VIEWS: Record<ViewMode, { label: string; days: number; dayW: number }> = {
 function jobBarRange(job: Job): { start: Date; end: Date } | null {
   const start = job.startDate ? parseISO(job.startDate) : null;
   const end = job.returnDate ? parseISO(job.returnDate) : null;
-  const hasEstimate = typeof job.estimatedDays === 'number' && job.estimatedDays > 0;
 
-  if (start) {
-    // Prefer the estimate from the start date; fall back to the return date,
-    // then to a default span when neither is available.
-    if (hasEstimate) return { start, end: addDays(start, job.estimatedDays!) };
-    if (end) return { start, end };
-    return { start, end: addDays(start, DEFAULT_SPAN_DAYS) };
-  }
+  if (start && end) return { start, end };
   if (end) {
-    // Only a return date — derive a start from the estimate (or default span).
-    const span = hasEstimate ? job.estimatedDays! : DEFAULT_SPAN_DAYS;
+    // Derive a start from the estimate when only a return date is known.
+    const span = job.estimatedDays && job.estimatedDays > 0 ? job.estimatedDays : 5;
     return { start: addDays(end, -span), end };
+  }
+  if (start) {
+    const span = job.estimatedDays && job.estimatedDays > 0 ? job.estimatedDays : 5;
+    return { start, end: addDays(start, span) };
   }
   return null;
 }
@@ -78,7 +75,7 @@ const LEGEND: { status: VisualStatus; label: string }[] = [
 ];
 
 interface DragState {
-  id: string;
+  jobId: string;
   startX: number;
   dayDelta: number;
   moved: boolean;
@@ -186,10 +183,6 @@ export function PlannerPage() {
   const { data: clients } = useClients();
   const { data: tasks } = useAllTasks();
   const updateJob = useUpdateJob();
-  const createTask = useCreateTask();
-  const updateTask = useUpdateTask();
-  const removeTask = useRemoveTask();
-  const shiftJobTasks = useShiftJobTasks();
   const navigate = useNavigate();
 
   const [view, setView] = useState<ViewMode>('twoweek');
@@ -268,14 +261,10 @@ export function PlannerPage() {
       return next;
     });
 
-  const startDrag = (
-    e: React.PointerEvent,
-    id: string,
-    setState: React.Dispatch<React.SetStateAction<DragState | null>>,
-  ) => {
+  const handlePointerDown = (e: React.PointerEvent, job: Job) => {
     e.preventDefault();
     (e.currentTarget as Element).setPointerCapture(e.pointerId);
-    setState({ id, startX: e.clientX, dayDelta: 0, moved: false });
+    setDrag({ jobId: job.id, startX: e.clientX, dayDelta: 0, moved: false });
   };
 
   const handlePointerMove = (e: React.PointerEvent, job: Job) => {
@@ -288,66 +277,20 @@ export function PlannerPage() {
     });
   };
 
-  const handleJobPointerUp = (job: Job) => {
-    const d = jobDrag;
-    setJobDrag(null);
-    if (!d || d.id !== job.id) return;
-    if (d.dayDelta !== 0) {
-      const patch = shiftJobDates(job, d.dayDelta);
-      if (Object.keys(patch).length > 0) {
-        updateJob.mutate({ id: job.id, patch });
-        // Keep the job's internal plan in step with its bar.
-        if ((tasksByJob.get(job.id) ?? []).length > 0) {
-          shiftJobTasks.mutate({ jobId: job.id, deltaDays: d.dayDelta });
+  const handlePointerUp = (job: Job) => {
+    setDrag((d) => {
+      if (!d || d.jobId !== job.id) return null;
+      if (d.dayDelta !== 0) {
+        const patch = shiftJobDates(job, d.dayDelta);
+        if (Object.keys(patch).length > 0) {
+          updateJob.mutate({ id: job.id, patch });
         }
+      } else if (!d.moved) {
+        // A plain click opens the job.
+        navigate(`/jobs/${job.id}`);
       }
-    } else if (!d.moved) {
-      // A plain click opens the job.
-      navigate(`/jobs/${job.id}`);
-    }
-  };
-
-  const handleTaskPointerUp = (task: JobTask) => {
-    const d = taskDrag;
-    setTaskDrag(null);
-    if (!d || d.id !== task.id) return;
-    if (d.dayDelta !== 0) {
-      updateTask.mutate({
-        id: task.id,
-        patch: { startDate: toISODate(addDays(parseISO(task.startDate), d.dayDelta)) },
-      });
-    } else if (!d.moved) {
-      // A plain click opens the inline editor.
-      setEditor({ jobId: task.jobId, taskId: task.id });
-    }
-  };
-
-  const toggleExpanded = (jobId: string) => {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(jobId)) next.delete(jobId);
-      else next.add(jobId);
-      return next;
+      return null;
     });
-    // Collapsing a row closes any editor it contained.
-    setEditor((ed) => (ed?.jobId === jobId ? null : ed));
-  };
-
-  const handleEditorSave = (draft: TaskDraft) => {
-    if (!editor) return;
-    if (editor.taskId) {
-      updateTask.mutate({ id: editor.taskId, patch: draft });
-    } else {
-      createTask.mutate({ ...draft, jobId: editor.jobId });
-    }
-    setEditor(null);
-  };
-
-  const handleEditorDelete = () => {
-    if (!editor?.taskId) return;
-    if (!window.confirm('Delete this task?')) return;
-    removeTask.mutate(editor.taskId);
-    setEditor(null);
   };
 
   /** Grid columns for a bar clipped to the visible window, or null if outside. */

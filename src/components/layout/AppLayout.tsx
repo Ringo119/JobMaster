@@ -1,17 +1,8 @@
-import { useEffect, useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 
 export function AppLayout() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const location = useLocation();
-
-  // Close the mobile drawer on navigation so the page is visible after a tap.
-  useEffect(() => {
-    setMenuOpen(false);
-  }, [location.pathname]);
-
   return (
     <div className="flex h-full">
       <Sidebar />
