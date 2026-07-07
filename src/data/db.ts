@@ -4,6 +4,7 @@ import type { Job } from './models/job';
 import type { Invoice } from './models/invoice';
 import type { Settings } from './models/settings';
 import type { JobDocument } from './models/document';
+import type { JobTask } from './models/task';
 
 /**
  * Local IndexedDB database (via Dexie). This is the local persistence layer.
@@ -16,6 +17,7 @@ export class JobMasterDB extends Dexie {
   invoices!: Table<Invoice, string>;
   settings!: Table<Settings, string>;
   documents!: Table<JobDocument, string>;
+  tasks!: Table<JobTask, string>;
 
   constructor() {
     super('jobmaster');
@@ -30,6 +32,10 @@ export class JobMasterDB extends Dexie {
     // v2: per-job document attachments (added in v3.0).
     this.version(2).stores({
       documents: 'id, jobId, createdAt',
+    });
+    // v3: per-job sub-tasks for the Planner's expandable rows (added in v3.1).
+    this.version(3).stores({
+      tasks: 'id, jobId, sortOrder',
     });
   }
 }

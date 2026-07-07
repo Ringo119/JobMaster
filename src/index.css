@@ -2,6 +2,89 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Theme variables. Tailwind's slate/brand/surface palettes resolve to these
+ * (see tailwind.config.js), so dark mode is a variable flip on <html class="dark">
+ * rather than dark: overrides on every element. Values are RGB triples so
+ * Tailwind opacity modifiers keep working.
+ */
+:root {
+  --surface: 255 255 255;
+  --slate-50: 248 250 252;
+  --slate-100: 241 245 249;
+  --slate-200: 226 232 240;
+  --slate-300: 203 213 225;
+  --slate-400: 148 163 184;
+  --slate-500: 100 116 139;
+  --slate-600: 71 85 105;
+  --slate-700: 51 65 85;
+  --slate-800: 30 41 59;
+  --slate-900: 15 23 42;
+
+  /* Accent (brand) — Professional Blue by default; overridden by data-accent. */
+  --brand-50: 239 246 255;
+  --brand-100: 219 234 254;
+  --brand-500: 59 118 237;
+  --brand-600: 37 99 232;
+  --brand-700: 29 78 216;
+  --brand-800: 30 64 175;
+  --brand-900: 30 58 138;
+}
+
+:root[data-accent='green'] {
+  --brand-50: 236 253 245;
+  --brand-100: 209 250 229;
+  --brand-500: 16 185 129;
+  --brand-600: 5 150 105;
+  --brand-700: 4 120 87;
+  --brand-800: 6 95 70;
+  --brand-900: 6 78 59;
+}
+
+:root[data-accent='violet'] {
+  --brand-50: 245 243 255;
+  --brand-100: 237 233 254;
+  --brand-500: 139 92 246;
+  --brand-600: 124 58 237;
+  --brand-700: 109 40 217;
+  --brand-800: 91 33 182;
+  --brand-900: 76 29 149;
+}
+
+/*
+ * Dark theme: the slate scale is (roughly) inverted so light-first pages read
+ * correctly — text-slate-900 becomes near-white, bg-slate-50 becomes the dark
+ * page background, borders soften instead of glare.
+ */
+.dark {
+  --surface: 30 41 59; /* cards/panels — slate-800 */
+  --slate-50: 15 23 42; /* page background — slate-900 */
+  --slate-100: 51 65 85;
+  --slate-200: 51 65 85;
+  --slate-300: 71 85 105;
+  --slate-400: 148 163 184;
+  --slate-500: 148 163 184;
+  --slate-600: 203 213 225;
+  --slate-700: 226 232 240;
+  --slate-800: 241 245 249;
+  --slate-900: 248 250 252;
+}
+
+/* The invoice document is always a light, print-faithful sheet of paper. */
+.invoice-doc {
+  --surface: 255 255 255;
+  --slate-50: 248 250 252;
+  --slate-100: 241 245 249;
+  --slate-200: 226 232 240;
+  --slate-300: 203 213 225;
+  --slate-400: 148 163 184;
+  --slate-500: 100 116 139;
+  --slate-600: 71 85 105;
+  --slate-700: 51 65 85;
+  --slate-800: 30 41 59;
+  --slate-900: 15 23 42;
+}
+
 html,
 body,
 #root {
@@ -12,8 +95,30 @@ body {
   margin: 0;
   font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
     Roboto, Helvetica, Arial, sans-serif;
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: rgb(var(--slate-50));
+  color: rgb(var(--slate-900));
+}
+
+/* Pop-in for dropdown panels and dialogs; disabled for reduced-motion users. */
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-panel {
+  animation: panel-in 150ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-panel {
+    animation: none;
+  }
 }
 
 /* Printing: show only the invoice document, hide app chrome and controls. */

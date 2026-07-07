@@ -3,6 +3,7 @@ import { uuid } from '../lib/uuid';
 import { defaultSettings } from './models/settings';
 import type { Client } from './models/client';
 import type { Job } from './models/job';
+import type { JobTask } from './models/task';
 
 /**
  * Seed the local database with demo data drawn from David's real spreadsheet
@@ -149,9 +150,57 @@ export async function seedDemoData(): Promise<void> {
     },
   ];
 
-  await db.transaction('rw', db.clients, db.jobs, db.settings, async () => {
+  // Sub-tasks: Fell Cottage is broken down with dated bars for the Planner;
+  // the ASAP loft conversion has an undated checklist.
+  const fellCottage = jobs[2];
+  const loft = jobs[3];
+  const tasks: JobTask[] = [
+    {
+      id: uid(),
+      jobId: fellCottage.id,
+      title: 'Take-off & measure',
+      done: true,
+      startDate: '2026-06-02',
+      endDate: '2026-06-05',
+      sortOrder: 1,
+      createdAt: now,
+    },
+    {
+      id: uid(),
+      jobId: fellCottage.id,
+      title: 'Pricing & submission',
+      done: false,
+      startDate: '2026-06-08',
+      endDate: '2026-06-12',
+      sortOrder: 2,
+      createdAt: now,
+    },
+    {
+      id: uid(),
+      jobId: loft.id,
+      title: 'First Fix Electrical',
+      done: false,
+      startDate: null,
+      endDate: null,
+      sortOrder: 1,
+      createdAt: now,
+    },
+    {
+      id: uid(),
+      jobId: loft.id,
+      title: 'Second Fix & Testing',
+      done: false,
+      startDate: null,
+      endDate: null,
+      sortOrder: 2,
+      createdAt: now,
+    },
+  ];
+
+  await db.transaction('rw', db.clients, db.jobs, db.settings, db.tasks, async () => {
     await db.clients.bulkAdd(clients);
     await db.jobs.bulkAdd(jobs);
+    await db.tasks.bulkAdd(tasks);
     await db.settings.put(defaultSettings);
   });
 }
@@ -166,11 +215,17 @@ export async function ensureSeeded(): Promise<void> {
 
 /** Wipe everything and reseed — used by the "Reset demo data" button in Settings. */
 export async function resetDemoData(): Promise<void> {
-  await db.transaction('rw', db.clients, db.jobs, db.invoices, db.settings, async () => {
-    await db.clients.clear();
-    await db.jobs.clear();
-    await db.invoices.clear();
-    await db.settings.clear();
-  });
+  await db.transaction(
+    'rw',
+    [db.clients, db.jobs, db.invoices, db.settings, db.documents, db.tasks],
+    async () => {
+      await db.clients.clear();
+      await db.jobs.clear();
+      await db.invoices.clear();
+      await db.settings.clear();
+      await db.documents.clear();
+      await db.tasks.clear();
+    },
+  );
   await seedDemoData();
 }

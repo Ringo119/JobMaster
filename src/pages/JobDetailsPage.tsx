@@ -16,6 +16,7 @@ import { PageHeader } from '../components/ui/PageHeader';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { DocumentsCard } from '../components/jobs/DocumentsCard';
+import { TasksCard } from '../components/jobs/TasksCard';
 
 const VAT_OPTIONS = [0.2, 0.05, 0] as const;
 
@@ -276,7 +277,7 @@ export function JobDetailsPage() {
                       className={`rounded-full border px-3 py-1 text-sm font-medium transition ${
                         active
                           ? 'border-transparent bg-brand-600 text-white'
-                          : 'border-slate-300 bg-white text-slate-600 hover:bg-slate-50'
+                          : 'border-slate-300 bg-surface text-slate-600 hover:bg-slate-50'
                       }`}
                     >
                       {JOB_STATUS_LABELS[s]}
@@ -417,7 +418,8 @@ export function JobDetailsPage() {
       </form>
 
       {isEdit && id && (
-        <div className="mt-6">
+        <div className="mt-6 space-y-6">
+          <TasksCard jobId={id} />
           <DocumentsCard jobId={id} />
         </div>
       )}

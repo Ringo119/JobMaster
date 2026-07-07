@@ -8,7 +8,7 @@ replacing two Excel spreadsheets (a Gantt-style work programme and a job/invoice
 register) with a single tool. Design principle: *"Excel, but it updates itself and
 tells me what's due."*
 
-**Current version: v3.0.**
+**Current version: v3.1.**
 
 ## Running it
 
@@ -63,6 +63,19 @@ change. Money is stored as integer **pence**; dates as ISO strings formatted to 
 - **Per-job Documents** — attach tenders, drawings, BoQs, quotes and files to a job
   (stored locally in IndexedDB), with download and remove.
 - **Email Client** — the invoice opens a pre-filled email via `mailto:`.
+
+### v3.1 — market-ready UI polish (Phase 1 of MARKET_READINESS_PLAN.txt)
+- **Top bar** — global search (Ctrl/⌘ K palette over jobs/clients/invoices), New Job
+  split button, reminders bell, theme toggle, profile menu.
+- **Stat tiles** — Active Jobs, Scheduled/Completed This Week (honest week-over-week
+  deltas derived from return dates), Outstanding Invoices; on Dashboard and Planner.
+- **Per-job Tasks** — a checklist on Job Details; dated tasks render as violet bars
+  in the Planner's expandable rows with done/total progress chips.
+- **Planner upgrades** — Week / 2 Weeks / Month zoom, Today + period navigation,
+  client/status filters popover, today marker line, "+ Add Unscheduled Job".
+- **Dark mode & theming** — class-strategy dark mode via CSS-variable slate/surface
+  palettes (pages keep ordinary `slate-*` classes; the invoice stays print-light),
+  configurable accent colour, logo upload in Settings, illustrated empty states.
 
 ## Deferred / future
 

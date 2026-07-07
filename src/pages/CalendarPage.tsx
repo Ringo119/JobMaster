@@ -14,6 +14,7 @@ import {
 import { PageHeader } from '../components/ui/PageHeader';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import { EmptyState } from '../components/ui/EmptyState';
 import { useJobs } from '../hooks/useJobs';
 import { useClients } from '../hooks/useClients';
 import { STATUS_STYLES, visualStatus } from '../lib/jobStatus';
@@ -129,8 +130,16 @@ export function CalendarPage() {
       )}
 
       {!hasAnyJob ? (
-        <Card className="p-8 text-center text-sm text-slate-500">
-          No jobs yet. Jobs with a return date will appear on the calendar here.
+        <Card>
+          <EmptyState
+            title="Nothing on the calendar yet"
+            hint="Jobs with a return date appear here automatically."
+            action={
+              <Link to="/jobs/new">
+                <Button>+ New Job</Button>
+              </Link>
+            }
+          />
         </Card>
       ) : (
         <Card className="overflow-hidden p-0">
@@ -160,7 +169,7 @@ export function CalendarPage() {
                 <div
                   key={key}
                   className={`min-h-[6.5rem] border-b border-r border-slate-100 p-1.5 ${
-                    inMonth ? 'bg-white' : 'bg-slate-50/60'
+                    inMonth ? 'bg-surface' : 'bg-slate-50/60'
                   }`}
                 >
                   <div className="mb-1 flex justify-end">

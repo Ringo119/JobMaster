@@ -13,6 +13,7 @@ import {
 } from '../lib/invoiceStatus';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Card } from '../components/ui/Card';
+import { EmptyState } from '../components/ui/EmptyState';
 
 type StatusFilter = VisualInvoiceStatus | 'all';
 
@@ -65,7 +66,7 @@ export function InvoiceRegisterPage() {
                 className={`rounded-full border px-3 py-1 text-sm font-medium transition ${
                   active
                     ? 'border-transparent bg-brand-600 text-white'
-                    : 'border-slate-300 bg-white text-slate-600 hover:bg-slate-50'
+                    : 'border-slate-300 bg-surface text-slate-600 hover:bg-slate-50'
                 }`}
               >
                 {f.label}
@@ -100,8 +101,23 @@ export function InvoiceRegisterPage() {
 
               {!isLoading && filtered.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-slate-500">
-                    No invoices yet — open a job and choose Create Invoice.
+                  <td colSpan={7}>
+                    <EmptyState
+                      title={status !== 'all' ? 'No invoices match' : 'No invoices yet'}
+                      hint={
+                        status !== 'all'
+                          ? 'Try a different status filter.'
+                          : 'Open a job and choose Create Invoice — the number, VAT and due date are filled in for you.'
+                      }
+                      action={
+                        <Link
+                          to="/jobs"
+                          className="text-sm font-medium text-brand-600 hover:text-brand-700"
+                        >
+                          Go to jobs →
+                        </Link>
+                      }
+                    />
                   </td>
                 </tr>
               )}

@@ -15,6 +15,26 @@
       rel="stylesheet"
     />
     <title>Job Master</title>
+    <script>
+      // Apply the saved theme/accent before first paint to avoid a flash.
+      (function () {
+        try {
+          var theme = localStorage.getItem('jobmaster-theme');
+          if (!theme) {
+            theme =
+              window.matchMedia &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light';
+          }
+          if (theme === 'dark') document.documentElement.classList.add('dark');
+          var accent = localStorage.getItem('jobmaster-accent');
+          if (accent && accent !== 'blue') {
+            document.documentElement.setAttribute('data-accent', accent);
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body style="margin:0;font-family:sans-serif">
     <div id="root">

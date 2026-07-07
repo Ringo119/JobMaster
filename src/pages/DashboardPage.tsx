@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Card, StatCard } from '../components/ui/Card';
+import { StatTilesRow } from '../components/stats/StatTilesRow';
 import { Button } from '../components/ui/Button';
 import { useJobs } from '../hooks/useJobs';
 import { useClients } from '../hooks/useClients';
@@ -8,7 +9,7 @@ import { useInvoices } from '../hooks/useInvoices';
 import { formatUK, isDueWithin, isOverdue, daysUntil } from '../lib/dates';
 import { formatGBP } from '../lib/currency';
 import { visualStatus } from '../lib/jobStatus';
-import { isOutstanding, visualInvoiceStatus } from '../lib/invoiceStatus';
+import { visualInvoiceStatus } from '../lib/invoiceStatus';
 import type { Job } from '../data/models/job';
 
 export function DashboardPage() {
@@ -37,14 +38,10 @@ export function DashboardPage() {
   }).length;
 
   const overdueCount = allJobs.filter((j) => visualStatus(j) === 'overdue').length;
-  const activeCount = allJobs.filter((j) => j.status !== 'paid').length;
   const clientCount = clients?.length ?? 0;
 
   const allInvoices = invoices ?? [];
-  // Outstanding = everything not yet paid. Awaiting payment = sent (or overdue), excluding drafts.
-  const outstandingPence = allInvoices
-    .filter(isOutstanding)
-    .reduce((sum, inv) => sum + inv.grossTotalPence, 0);
+  // Awaiting payment = sent (or overdue), excluding drafts.
   const awaitingPaymentPence = allInvoices
     .filter((inv) => {
       const v = visualInvoiceStatus(inv);
@@ -78,6 +75,8 @@ export function DashboardPage() {
         }
       />
 
+      <StatTilesRow />
+
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard label="Jobs Due This Week" value={dueThisWeek} />
         <StatCard
@@ -85,14 +84,6 @@ export function DashboardPage() {
           value={overdueCount}
           accent={overdueCount > 0 ? 'text-red-600' : 'text-slate-900'}
         />
-        <StatCard label="Active Jobs" value={activeCount} />
-        <StatCard label="Clients" value={clientCount} />
-      </div>
-
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Link to="/invoices" className="block">
-          <StatCard label="Invoices Outstanding" value={formatGBP(outstandingPence)} />
-        </Link>
         <Link to="/payments" className="block">
           <StatCard
             label="Awaiting Payment"
@@ -100,6 +91,7 @@ export function DashboardPage() {
             accent={awaitingPaymentPence > 0 ? 'text-amber-600' : 'text-slate-900'}
           />
         </Link>
+        <StatCard label="Clients" value={clientCount} />
       </div>
 
       <Card className="mb-6 p-5">

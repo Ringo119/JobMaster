@@ -13,6 +13,7 @@ import { StatusBadge } from '../components/ui/Badge';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import { EmptyState } from '../components/ui/EmptyState';
 
 type StatusFilter = JobStatus | 'all';
 
@@ -66,7 +67,7 @@ export function JobRegisterPage() {
                   className={`rounded-full border px-3 py-1 text-sm font-medium transition ${
                     active
                       ? 'border-transparent bg-brand-600 text-white'
-                      : 'border-slate-300 bg-white text-slate-600 hover:bg-slate-50'
+                      : 'border-slate-300 bg-surface text-slate-600 hover:bg-slate-50'
                   }`}
                 >
                   {f.label}
@@ -102,12 +103,22 @@ export function JobRegisterPage() {
 
               {!isLoading && (jobs?.length ?? 0) === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-slate-500">
-                    No jobs found.{' '}
-                    <Link to="/jobs/new" className="font-medium text-brand-600 hover:underline">
-                      Create one
-                    </Link>
-                    .
+                  <td colSpan={7}>
+                    <EmptyState
+                      title={
+                        search || status !== 'all' ? 'No jobs match' : 'No jobs yet'
+                      }
+                      hint={
+                        search || status !== 'all'
+                          ? 'Try a different search or clear the status filter.'
+                          : 'Your job register starts here — capture the first job and it appears on the Planner automatically.'
+                      }
+                      action={
+                        <Link to="/jobs/new">
+                          <Button>+ New Job</Button>
+                        </Link>
+                      }
+                    />
                   </td>
                 </tr>
               )}

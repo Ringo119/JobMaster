@@ -1,0 +1,153 @@
+JOBMASTER: ROAD TO MARKET
+=========================
+Plan date: 7 July 2026
+Based on: the v3.2.0 target mockup (contextImage.jpg), the original design brief
+(context.txt), the current v3.0 codebase, and the design review notes.
+
+
+WHERE WE ARE VS. WHERE THE MOCKUP POINTS
+----------------------------------------
+The current app is a solid v3.0 personal tool: all core workflows exist
+(jobs -> planner -> invoice -> paid), money is handled correctly in pence, and
+the repository seam in src/data/repositories/ was designed so a hosted backend
+is a localized swap. What it is NOT yet is a product: there are no accounts, no
+sync, no billing, no tests, and the mockup shows several features that don't
+exist yet (global search, per-job tasks, dark mode, stat-tile deltas, Pro tier,
+team utilisation).
+
+The gap splits into four workstreams. Phase 2 (backend) is the long pole and
+the true "market-ready" gate; the UI polish in Phase 1 can proceed in parallel.
+
+
+PHASE 1 — MATCH THE MOCKUP (UI/UX POLISH) · ~2-3 weeks
+------------------------------------------------------
+Everything here works against the existing local data layer, so it is low-risk
+and immediately demo-able.
+
+1. Top navigation bar
+   - Global search across jobs/clients/invoices with a Cmd/Ctrl+K palette.
+   - Move the existing RemindersBell into the top bar with an unread-count badge.
+   - "New Job" split button (job / client / invoice).
+   - Profile menu showing the business name from Settings.
+
+2. Dashboard/Planner stat tiles with deltas
+   - Active Jobs, Scheduled This Week, Completed This Week, Outstanding
+     Invoices — each with a week-over-week % change (computable from existing
+     job/invoice dates).
+   - SKIP "Team Utilisation" for now: it presumes multi-user (Phase 4 concern).
+     Shipping a fake number would undermine trust.
+
+3. Planner upgrades (the flagship screen — deserves the most work)
+   - New Task entity (child of Job) so rows expand to show sub-tasks like
+     "First Fix Electrical" / "Second Fix & Testing", with 0/3 progress chips.
+   - Week / 2-week / Month zoom toggle.
+   - Filters popover (client, status) and a status legend.
+   - "Add Unscheduled Job" affordance feeding the ASAP strip.
+
+4. Design-system pass (from the design review)
+   - Dark mode via Tailwind's class strategy, toggle persisted in Settings.
+   - 8px spacing audit throughout the UI.
+   - Subtle animations for hover states, drag-and-drop, and panel transitions
+     (~150ms, respecting prefers-reduced-motion).
+   - Illustrated empty states for every table (first-run experience matters far
+     more once demo seeding is off by default).
+   - Configurable accent colour + logo in Settings (the logoDataUrl field
+     already exists — extend it to a brand colour used on invoices and, later,
+     white-label deployments).
+
+
+PHASE 2 — SAAS FOUNDATION (THE MARKET-READY GATE) · ~4-6 weeks
+--------------------------------------------------------------
+1. Supabase backend through the existing repository interfaces:
+   - Postgres tables mirroring the Zod models.
+   - Auth (email magic-link + Google).
+   - Row-level security per account from day one.
+   - Supabase Storage for job documents (replacing IndexedDB blobs).
+
+2. Migration path: an importer that lifts a user's existing IndexedDB data into
+   their new account on first sign-in — this is how Dad and any beta users keep
+   their data.
+
+3. Keep local-first as the free trial: "try without an account" running on
+   Dexie, with a one-click upgrade to a synced account. Nearly free thanks to
+   the repo seam, and a real differentiator for a sceptical, Excel-native
+   audience.
+
+4. Real outputs:
+   - Server-side or print-CSS-hardened PDF invoices, including the UK VAT
+     invoice legal fields (VAT number, invoice date, etc.).
+   - Real invoice email sending (Resend/Postmark) replacing mailto:.
+
+
+PHASE 3 — QUALITY, TRUST, AND COMPLIANCE · ~2-3 weeks, partly parallel
+----------------------------------------------------------------------
+1. Tests + CI
+   - Vitest unit tests for the money/VAT/date/status libs in src/lib — these
+     guard invoicing correctness and are non-negotiable for a product people
+     bill with.
+   - React Testing Library for forms.
+   - One Playwright happy path: create client -> job -> drag on planner ->
+     invoice -> mark paid.
+   - CI workflow running typecheck + tests on PRs (currently only deploy.yml
+     exists).
+
+2. Operations: Sentry for error monitoring, privacy-friendly analytics
+   (Plausible/PostHog), automated DB backups, uptime monitoring.
+
+3. Legal/GDPR (UK audience): privacy policy, terms, cookie stance, and data
+   export (CSV/JSON) + account deletion built into Settings. Export doubles as
+   the "escape hatch" that makes Excel users comfortable committing.
+
+4. Accessibility pass: keyboard access for planner drag interactions (an
+   alternative to drag), contrast in both themes, focus states.
+
+
+PHASE 4 — MONETISATION & GO-TO-MARKET · ~2-4 weeks
+--------------------------------------------------
+1. Pricing model (matching the mockup's "Upgrade to Pro"):
+   - Free: single user, capped active jobs, JobMaster badge on invoices.
+   - Pro (~GBP 9-15/mo): unlimited jobs, documents storage, reports, custom
+     branding, email sending.
+   - Team (later): multi-user — which unlocks the Team Utilisation tile for
+     real.
+   - Stripe Billing + customer portal; gate features via a plan flag in
+     Settings.
+
+2. Positioning: Jobber/ServiceM8 target field-service crews at GBP 30-100+/mo;
+   Monday/ClickUp are generic. JobMaster's wedge is the sole-trader QS /
+   estimator / small contractor who runs their business from two spreadsheets —
+   cheaper, UK-native (VAT, dd/MM/yyyy, payment terms), and shaped exactly like
+   the workflow it replaces. Keep the tagline: "Excel, but it updates itself
+   and tells me what's due."
+
+3. Launch surface: marketing landing page on a proper domain (move the app off
+   /JobMaster/ GitHub Pages to e.g. app.jobmaster.co.uk on Vercel), demo mode
+   as the interactive tour, a 2-minute walkthrough video, help docs for the
+   five core flows.
+
+4. Beta before launch: Dad plus 5-10 QSs/estimators from his network for 3-4
+   weeks, with an in-app feedback link. Their invoices are the real test of the
+   PDF/VAT output. Then launch to UK construction-professional communities
+   (LinkedIn, RICS/CIOB-adjacent groups, r/QuantitySurveying).
+
+
+SUGGESTED RELEASE TRAIN
+-----------------------
+v3.1  Phase 1 UI polish (mockup parity minus Team tile)
+      Gate: looks the part in demos
+v4.0  Auth + Supabase sync + data migration + PDF/email
+      Gate: first paying-quality accounts
+v4.1  Tests/CI, Sentry, GDPR export/delete, legal pages
+      Gate: safe to charge money
+v4.2  Stripe + Free/Pro gating + landing page -> public beta
+      Gate: beta feedback
+v5.0  Public launch; Team tier + utilisation tile on the roadmap
+
+
+DECISIONS TO MAKE BEFORE ANY CODE
+---------------------------------
+1. Confirm Supabase as the backend — the codebase was architected for it and it
+   bundles auth/storage/RLS; no reason to deviate.
+2. Pick the pricing posture — recommendation: free local-only tier + a single
+   Pro plan at ~GBP 12/mo, keeping the SKU count at one until Team demand is
+   proven.
