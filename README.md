@@ -8,7 +8,7 @@ replacing two Excel spreadsheets (a Gantt-style work programme and a job/invoice
 register) with a single tool. Design principle: *"Excel, but it updates itself and
 tells me what's due."*
 
-**Current version: v3.1.**
+**Current version: v3.2.**
 
 ## Running it
 
@@ -90,7 +90,7 @@ src/
   data/
     models/         Zod schemas + types (the data model)
     repositories/   interfaces + Dexie implementations (backend swap point)
-    db.ts, seed.ts  Dexie database (v2: + documents) + demo data
+    db.ts, seed.ts  Dexie database (v2: + documents, v3: + tasks) + demo data
   hooks/            TanStack Query hooks wrapping the repositories
   lib/              currency, dates, VAT, job/invoice status, reminders, notify
   components/       layout (sidebar, reminders bell) + shared UI + job widgets
