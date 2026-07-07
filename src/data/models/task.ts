@@ -1,19 +1,21 @@
 import { z } from 'zod';
 
 /**
- * A sub-task within a job — used to break a job down into smaller planned
- * steps on the Programme Planner (e.g. "Take-off", "Pricing", "Write-up").
- * Tasks are placed by start date + duration and ticked off when done.
+ * A sub-task within a job ("First Fix Electrical", "Pricing & submission"…).
+ * Tasks power the expandable rows on the Planner: when a task has its own
+ * dates it renders as a bar under the job; undated tasks still count towards
+ * the job's done/total progress chip.
  */
 export const jobTaskSchema = z.object({
   id: z.string(),
   jobId: z.string(),
-  name: z.string().min(1, 'Task name is required'),
-  /** ISO yyyy-MM-dd. Tasks always sit on the planner, so a date is required. */
-  startDate: z.string(),
-  /** Length of the task bar in whole days (minimum 1). */
-  durationDays: z.number().int().positive(),
+  title: z.string().min(1, 'Task needs a title'),
   done: z.boolean(),
+  /** ISO yyyy-MM-dd or null. Both set → the task gets its own planner bar. */
+  startDate: z.string().nullable(),
+  endDate: z.string().nullable(),
+  /** Manual ordering within the job (ascending). */
+  sortOrder: z.number().int(),
   createdAt: z.string(),
 });
 

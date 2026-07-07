@@ -33,9 +33,9 @@ export class JobMasterDB extends Dexie {
     this.version(2).stores({
       documents: 'id, jobId, createdAt',
     });
-    // v3: per-job sub-tasks for the planner breakdown.
+    // v3: per-job sub-tasks for the Planner's expandable rows (added in v3.1).
     this.version(3).stores({
-      tasks: 'id, jobId, startDate',
+      tasks: 'id, jobId, sortOrder',
     });
   }
 }

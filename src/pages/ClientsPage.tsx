@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import { EmptyState } from '../components/ui/EmptyState';
 import { useClients, useCreateClient } from '../hooks/useClients';
 import { clientFormSchema, type ClientFormValues } from '../data/models/client';
 
@@ -14,8 +15,10 @@ const labelClass = 'mb-1 block text-sm font-medium text-slate-700';
 const errorClass = 'mt-1 text-xs text-red-600';
 
 export function ClientsPage() {
+  const [searchParams] = useSearchParams();
   const [search, setSearch] = useState('');
-  const [showForm, setShowForm] = useState(false);
+  // ?new=1 (e.g. from the top bar's New menu) opens the form straight away.
+  const [showForm, setShowForm] = useState(() => searchParams.get('new') === '1');
 
   const { data: clients, isLoading } = useClients(search);
   const createClient = useCreateClient();
@@ -146,9 +149,19 @@ export function ClientsPage() {
         {isLoading ? (
           <div className="p-8 text-center text-sm text-slate-500">Loading clients…</div>
         ) : !clients || clients.length === 0 ? (
-          <div className="p-8 text-center text-sm text-slate-500">
-            {search ? 'No clients match your search.' : 'No clients yet. Add your first one.'}
-          </div>
+          <EmptyState
+            title={search ? 'No clients match' : 'No clients yet'}
+            hint={
+              search
+                ? 'Try a different search.'
+                : 'Add a client once and their details fill in on every job and invoice.'
+            }
+            action={
+              !search && (
+                <Button onClick={() => setShowForm(true)}>+ New Client</Button>
+              )
+            }
+          />
         ) : (
           <table className="w-full text-sm">
             <thead>

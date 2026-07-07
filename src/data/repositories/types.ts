@@ -68,16 +68,16 @@ export interface DocumentRepository {
   remove(id: string): Promise<void>;
 }
 
-/** Data needed to create a task; id/createdAt are assigned by the repo. */
-export type NewTask = Omit<JobTask, 'id' | 'createdAt'>;
+/** Data needed to create a task; sortOrder is assigned by the repo when omitted. */
+export type NewTask = Omit<JobTask, 'id' | 'createdAt' | 'sortOrder'> & {
+  sortOrder?: number;
+};
 
 export interface TaskRepository {
-  /** All tasks across every job — the Planner groups them by job itself. */
-  list(): Promise<JobTask[]>;
+  /** All tasks across all jobs — used by the Planner's expandable rows. */
+  listAll(): Promise<JobTask[]>;
   listByJob(jobId: string): Promise<JobTask[]>;
   create(data: NewTask): Promise<JobTask>;
   update(id: string, patch: Partial<JobTask>): Promise<JobTask>;
   remove(id: string): Promise<void>;
-  /** Shift all of a job's tasks by N days — used when the job's bar is dragged. */
-  shiftByJob(jobId: string, deltaDays: number): Promise<void>;
 }

@@ -81,7 +81,7 @@ export function RemindersBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 z-50 mt-2 max-h-[28rem] w-[360px] max-w-[calc(100vw-2rem)] overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg">
+        <div className="animate-panel absolute right-0 z-50 mt-2 max-h-[28rem] w-[360px] overflow-y-auto rounded-xl border border-slate-200 bg-surface shadow-lg">
           <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
             <span className="text-sm font-semibold text-slate-900">Reminders</span>
             <span className="text-xs font-medium text-slate-400">{count}</span>

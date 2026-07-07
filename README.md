@@ -64,12 +64,18 @@ change. Money is stored as integer **pence**; dates as ISO strings formatted to 
   (stored locally in IndexedDB), with download and remove.
 - **Email Client** — the invoice opens a pre-filled email via `mailto:`.
 
-### v3.2 — job breakdown on the Planner
-- **Sub-tasks** — expand a Planner row to break a job into its own planned steps
-  (take-off, pricing, write-up…), each a draggable bar with a start date and
-  duration. Add/edit tasks inline on the Planner, tick them off as done (the row
-  shows a done/total badge), and dragging the job's bar moves its whole task
-  plan with it.
+### v3.1 — market-ready UI polish (Phase 1 of MARKET_READINESS_PLAN.txt)
+- **Top bar** — global search (Ctrl/⌘ K palette over jobs/clients/invoices), New Job
+  split button, reminders bell, theme toggle, profile menu.
+- **Stat tiles** — Active Jobs, Scheduled/Completed This Week (honest week-over-week
+  deltas derived from return dates), Outstanding Invoices; on Dashboard and Planner.
+- **Per-job Tasks** — a checklist on Job Details; dated tasks render as violet bars
+  in the Planner's expandable rows with done/total progress chips.
+- **Planner upgrades** — Week / 2 Weeks / Month zoom, Today + period navigation,
+  client/status filters popover, today marker line, "+ Add Unscheduled Job".
+- **Dark mode & theming** — class-strategy dark mode via CSS-variable slate/surface
+  palettes (pages keep ordinary `slate-*` classes; the invoice stays print-light),
+  configurable accent colour, logo upload in Settings, illustrated empty states.
 
 ## Deferred / future
 

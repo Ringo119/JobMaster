@@ -5,11 +5,19 @@ import type { NewTask } from '../data/repositories/types';
 
 const KEY = ['tasks'];
 
-/** All tasks across every job — the Planner groups them by job itself. */
-export function useTasks() {
+/** All tasks across all jobs — the Planner groups these by jobId. */
+export function useAllTasks() {
   return useQuery({
     queryKey: KEY,
-    queryFn: () => taskRepository.list(),
+    queryFn: () => taskRepository.listAll(),
+  });
+}
+
+export function useTasksByJob(jobId: string | undefined) {
+  return useQuery({
+    queryKey: [...KEY, 'job', jobId],
+    queryFn: () => taskRepository.listByJob(jobId!),
+    enabled: !!jobId,
   });
 }
 
@@ -17,6 +25,7 @@ export function useCreateTask() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: NewTask) => taskRepository.create(data),
+    // Invalidating the root key refreshes both the per-job list and the Planner.
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
   });
 }
@@ -34,16 +43,6 @@ export function useRemoveTask() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => taskRepository.remove(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
-  });
-}
-
-/** Shift a job's whole task plan by N days — used when its bar is dragged. */
-export function useShiftJobTasks() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ jobId, deltaDays }: { jobId: string; deltaDays: number }) =>
-      taskRepository.shiftByJob(jobId, deltaDays),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
   });
 }

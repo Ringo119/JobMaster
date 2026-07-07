@@ -1,24 +1,28 @@
-import { addDays, parseISO } from 'date-fns';
 import { db } from '../../db';
 import { uuid } from '../../../lib/uuid';
-import { toISODate } from '../../../lib/dates';
 import type { JobTask } from '../../models/task';
 import type { NewTask, TaskRepository } from '../types';
 
 export class DexieTaskRepository implements TaskRepository {
-  async list(): Promise<JobTask[]> {
+  async listAll(): Promise<JobTask[]> {
     const tasks = await db.tasks.toArray();
-    return tasks.sort(byStart);
+    return tasks.sort(bySortOrder);
   }
 
   async listByJob(jobId: string): Promise<JobTask[]> {
     const tasks = await db.tasks.where('jobId').equals(jobId).toArray();
-    return tasks.sort(byStart);
+    return tasks.sort(bySortOrder);
   }
 
   async create(data: NewTask): Promise<JobTask> {
+    let sortOrder = data.sortOrder;
+    if (sortOrder == null) {
+      const siblings = await db.tasks.where('jobId').equals(data.jobId).toArray();
+      sortOrder = siblings.reduce((max, t) => Math.max(max, t.sortOrder), 0) + 1;
+    }
     const task: JobTask = {
       ...data,
+      sortOrder,
       id: uuid(),
       createdAt: new Date().toISOString(),
     };
@@ -36,22 +40,9 @@ export class DexieTaskRepository implements TaskRepository {
   async remove(id: string): Promise<void> {
     await db.tasks.delete(id);
   }
-
-  async shiftByJob(jobId: string, deltaDays: number): Promise<void> {
-    await db.transaction('rw', db.tasks, async () => {
-      const tasks = await db.tasks.where('jobId').equals(jobId).toArray();
-      for (const task of tasks) {
-        await db.tasks.update(task.id, {
-          startDate: toISODate(addDays(parseISO(task.startDate), deltaDays)),
-        });
-      }
-    });
-  }
 }
 
-/** Earliest start first, then stable by creation time. */
-function byStart(a: JobTask, b: JobTask): number {
-  return (
-    a.startDate.localeCompare(b.startDate) || a.createdAt.localeCompare(b.createdAt)
-  );
+function bySortOrder(a: JobTask, b: JobTask): number {
+  if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder;
+  return a.createdAt.localeCompare(b.createdAt);
 }
