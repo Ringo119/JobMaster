@@ -24,11 +24,11 @@ export function Sidebar() {
   // The sidebar is always navy, so its greys are literal — they must not flip with the theme.
   return (
     <aside className="flex w-60 shrink-0 flex-col border-r border-white/5 bg-navy text-[#cbd5e1]">
-      <div className="flex items-center gap-2 px-5 py-5">
-        <Logo size={28} onDark />
-        <span className="text-lg font-semibold tracking-tight">
-          <span className="text-white">Job</span>{' '}
-          <span className="text-success">Master</span>
+      <div className="flex items-center gap-2.5 px-5 py-5">
+        <Logo size={32} />
+        <span className="text-lg font-bold tracking-tight">
+          <span className="text-white">Job</span>
+          <span className="text-[#3b82f6]">Master</span>
         </span>
       </div>
       <nav className="flex-1 space-y-1 px-3">
