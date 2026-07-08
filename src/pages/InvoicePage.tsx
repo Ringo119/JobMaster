@@ -38,10 +38,10 @@ export function InvoicePage() {
         <Card className="p-8 text-center text-sm text-slate-500">
           <p>That invoice could not be found.</p>
           <Link
-            to="/invoices"
+            to="/jobs"
             className="mt-3 inline-block text-brand-600 hover:text-brand-700"
           >
-            ← Back to invoices
+            ← Back to jobs
           </Link>
         </Card>
       </div>
@@ -69,8 +69,11 @@ export function InvoicePage() {
     <div>
       <div className="no-print mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <Link to="/invoices" className="text-sm text-brand-600 hover:text-brand-700">
-            ← Back to invoices
+          <Link
+            to={`/jobs/${invoice.jobId}`}
+            className="text-sm text-brand-600 hover:text-brand-700"
+          >
+            ← Back to job
           </Link>
           <span
             className={`inline-flex items-center gap-2 rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusStyles.badge}`}

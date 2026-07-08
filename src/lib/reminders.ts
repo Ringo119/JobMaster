@@ -103,7 +103,7 @@ export function buildReminders(
         severity: 'info',
         title: `Payment due soon: ${invoice.invoiceNumber}`,
         detail: `${who} — due ${formatUK(invoice.dueDate)}.`,
-        to: `/payments`,
+        to: `/invoices/${invoice.id}`,
         order: 5,
       });
     }

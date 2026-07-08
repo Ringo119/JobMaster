@@ -62,9 +62,6 @@ function NewMenu() {
           >
             New client
           </button>
-          <button type="button" className={menuItemCls} onClick={() => go('/invoices')}>
-            New invoice…
-          </button>
         </div>
       )}
     </div>
