@@ -13,7 +13,7 @@ import { Button } from '../components/ui/Button';
 import { StatTilesRow } from '../components/stats/StatTilesRow';
 import { useJobs, useUpdateJob } from '../hooks/useJobs';
 import { useClients } from '../hooks/useClients';
-import { useAllTasks } from '../hooks/useTasks';
+import { useAllTasks, useCreateTask } from '../hooks/useTasks';
 import { formatGBP } from '../lib/currency';
 import { today, toISODate } from '../lib/dates';
 import { STATUS_STYLES, visualStatus, type VisualStatus } from '../lib/jobStatus';
@@ -73,6 +73,61 @@ const LEGEND: { status: VisualStatus; label: string }[] = [
   { status: 'invoiced', label: 'Invoiced / Paid' },
   { status: 'overdue', label: 'Overdue' },
 ];
+
+/**
+ * Inline add-task row shown under an expanded job — tasks can be added right
+ * from the Planner without opening the job. New tasks start undated; dates
+ * (and therefore bars) can be set from Job Details.
+ */
+function AddTaskRow({
+  jobId,
+  gridTemplateColumns,
+}: {
+  jobId: string;
+  gridTemplateColumns: string;
+}) {
+  const createTask = useCreateTask();
+  const [title, setTitle] = useState('');
+
+  async function handleAdd(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = title.trim();
+    if (!trimmed || createTask.isPending) return;
+    await createTask.mutateAsync({
+      jobId,
+      title: trimmed,
+      done: false,
+      startDate: null,
+      endDate: null,
+    });
+    setTitle('');
+  }
+
+  return (
+    <div className="grid" style={{ gridTemplateColumns }}>
+      <form
+        onSubmit={handleAdd}
+        className="sticky left-0 z-10 flex items-center gap-1.5 bg-surface py-1 pl-6 pr-2"
+      >
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Add a task…"
+          aria-label="New task title"
+          className="w-full min-w-0 rounded border border-slate-300 bg-surface px-1.5 py-0.5 text-[11px] text-slate-700 placeholder:text-slate-400 focus:border-brand-600 focus:outline-none"
+        />
+        <button
+          type="submit"
+          disabled={createTask.isPending || !title.trim()}
+          className="shrink-0 text-[11px] font-medium text-brand-600 transition hover:text-brand-700 disabled:opacity-40"
+        >
+          Add
+        </button>
+      </form>
+    </div>
+  );
+}
 
 interface DragState {
   jobId: string;
@@ -549,22 +604,10 @@ export function PlannerPage() {
                       )}
                     </div>
 
-                    {/* Expanded task sub-rows */}
-                    {isExpanded &&
-                      (jobTasks.length === 0 ? (
-                        <div className="grid" style={{ gridTemplateColumns }}>
-                          <div className="sticky left-0 z-10 bg-surface py-1.5 pl-6 pr-2 text-xs text-slate-400">
-                            No tasks —{' '}
-                            <Link
-                              to={`/jobs/${job.id}`}
-                              className="font-medium text-brand-600 hover:text-brand-700"
-                            >
-                              add some
-                            </Link>
-                          </div>
-                        </div>
-                      ) : (
-                        jobTasks.map((task) => {
+                    {/* Expanded task sub-rows + inline add */}
+                    {isExpanded && (
+                      <>
+                        {jobTasks.map((task) => {
                           const tRange = taskBarRange(task);
                           const tCols = tRange ? barColumns(tRange) : null;
                           return (
@@ -606,8 +649,13 @@ export function PlannerPage() {
                               )}
                             </div>
                           );
-                        })
-                      ))}
+                        })}
+                        <AddTaskRow
+                          jobId={job.id}
+                          gridTemplateColumns={gridTemplateColumns}
+                        />
+                      </>
+                    )}
                   </div>
                 );
               })}
