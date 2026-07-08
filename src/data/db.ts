@@ -37,6 +37,21 @@ export class JobMasterDB extends Dexie {
     this.version(3).stores({
       tasks: 'id, jobId, sortOrder',
     });
+    // v4: tasks gain a kanban status (todo/doing/done) replacing the old
+    // boolean `done` (added in v3.2).
+    this.version(4)
+      .stores({
+        tasks: 'id, jobId, sortOrder, status',
+      })
+      .upgrade((tx) =>
+        tx
+          .table('tasks')
+          .toCollection()
+          .modify((task: { done?: boolean; status?: string }) => {
+            task.status = task.done ? 'done' : 'todo';
+            delete task.done;
+          }),
+      );
   }
 }
 

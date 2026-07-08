@@ -26,7 +26,12 @@ export function useCreateTask() {
   return useMutation({
     mutationFn: (data: NewTask) => taskRepository.create(data),
     // Invalidating the root key refreshes both the per-job list and the Planner.
-    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+    // Jobs are invalidated too: a task entering "doing" can advance the job's
+    // status (planning → working) via the repository automation.
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEY });
+      qc.invalidateQueries({ queryKey: ['jobs'] });
+    },
   });
 }
 
@@ -35,7 +40,10 @@ export function useUpdateTask() {
   return useMutation({
     mutationFn: ({ id, patch }: { id: string; patch: Partial<JobTask> }) =>
       taskRepository.update(id, patch),
-    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEY });
+      qc.invalidateQueries({ queryKey: ['jobs'] });
+    },
   });
 }
 

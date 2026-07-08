@@ -27,6 +27,7 @@ export class DexieTaskRepository implements TaskRepository {
       createdAt: new Date().toISOString(),
     };
     await db.tasks.add(task);
+    if (task.status === 'doing') await nudgeJobToWorking(task.jobId);
     return task;
   }
 
@@ -34,11 +35,24 @@ export class DexieTaskRepository implements TaskRepository {
     await db.tasks.update(id, patch);
     const updated = await db.tasks.get(id);
     if (!updated) throw new Error(`Task ${id} not found`);
+    if (patch.status === 'doing') await nudgeJobToWorking(updated.jobId);
     return updated;
   }
 
   async remove(id: string): Promise<void> {
     await db.tasks.delete(id);
+  }
+}
+
+/**
+ * Status automation: work starting on a task means work has started on the
+ * job, so a Planning job advances to Working (mirroring the invoice-created →
+ * Invoiced automation). Never moves a job backwards.
+ */
+async function nudgeJobToWorking(jobId: string): Promise<void> {
+  const job = await db.jobs.get(jobId);
+  if (job && job.status === 'planning') {
+    await db.jobs.update(jobId, { status: 'working' });
   }
 }
 
