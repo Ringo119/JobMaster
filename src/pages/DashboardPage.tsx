@@ -84,13 +84,11 @@ export function DashboardPage() {
           value={overdueCount}
           accent={overdueCount > 0 ? 'text-red-600' : 'text-slate-900'}
         />
-        <Link to="/payments" className="block">
-          <StatCard
-            label="Awaiting Payment"
-            value={formatGBP(awaitingPaymentPence)}
-            accent={awaitingPaymentPence > 0 ? 'text-amber-600' : 'text-slate-900'}
-          />
-        </Link>
+        <StatCard
+          label="Awaiting Payment"
+          value={formatGBP(awaitingPaymentPence)}
+          accent={awaitingPaymentPence > 0 ? 'text-amber-600' : 'text-slate-900'}
+        />
         <StatCard label="Clients" value={clientCount} />
       </div>
 

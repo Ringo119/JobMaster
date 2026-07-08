@@ -6,9 +6,7 @@ import { JobDetailsPage } from './pages/JobDetailsPage';
 import { PlannerPage } from './pages/PlannerPage';
 import { ClientsPage } from './pages/ClientsPage';
 import { ClientDetailsPage } from './pages/ClientDetailsPage';
-import { InvoiceRegisterPage } from './pages/InvoiceRegisterPage';
 import { InvoicePage } from './pages/InvoicePage';
-import { PaymentsPage } from './pages/PaymentsPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { CalendarPage } from './pages/CalendarPage';
@@ -26,9 +24,10 @@ export const router = createHashRouter([
       { path: 'calendar', element: <CalendarPage /> },
       { path: 'clients', element: <ClientsPage /> },
       { path: 'clients/:id', element: <ClientDetailsPage /> },
-      { path: 'invoices', element: <InvoiceRegisterPage /> },
+      // The invoice register and payments screens are parked for now (their
+      // sidebar entries are greyed out); the invoice document stays reachable
+      // from Job Details, reminders and search.
       { path: 'invoices/:id', element: <InvoicePage /> },
-      { path: 'payments', element: <PaymentsPage /> },
       { path: 'reports', element: <ReportsPage /> },
       { path: 'settings', element: <SettingsPage /> },
     ],
