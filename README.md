@@ -77,6 +77,18 @@ change. Money is stored as integer **pence**; dates as ISO strings formatted to 
   palettes (pages keep ordinary `slate-*` classes; the invoice stays print-light),
   configurable accent colour, logo upload in Settings, illustrated empty states.
 
+### v3.2 — kanban boards
+- **Per-job boards** — every job gets a To Do / Doing / Done board: drag cards
+  between columns, quick-add a task straight into any column.
+- **Two ways in** — the board opens as a modal from the Planner (click a job's
+  progress chip) and as a List | Board toggle on Job Details.
+- **Planner colour coding** — task bars/dots are coloured by column, with a
+  segmented progress meter per job.
+- **Status automation** — moving the first task to Doing advances a Planning job
+  to Working (never backwards).
+- **Dexie v4 migration** — existing tasks migrate from the old `done` boolean to
+  the three-column status.
+
 ## Deferred / future
 
 A hosted backend (Supabase) for multi-device sync and real email automation; the

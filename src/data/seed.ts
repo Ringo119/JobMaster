@@ -151,7 +151,8 @@ export async function seedDemoData(): Promise<void> {
   ];
 
   // Sub-tasks: Fell Cottage is broken down with dated bars for the Planner;
-  // the ASAP loft conversion has an undated checklist.
+  // the ASAP loft conversion has an undated checklist. Statuses are spread
+  // across the board columns so demo kanban boards look lived-in.
   const fellCottage = jobs[2];
   const loft = jobs[3];
   const tasks: JobTask[] = [
@@ -159,7 +160,7 @@ export async function seedDemoData(): Promise<void> {
       id: uid(),
       jobId: fellCottage.id,
       title: 'Take-off & measure',
-      done: true,
+      status: 'done',
       startDate: '2026-06-02',
       endDate: '2026-06-05',
       sortOrder: 1,
@@ -169,7 +170,7 @@ export async function seedDemoData(): Promise<void> {
       id: uid(),
       jobId: fellCottage.id,
       title: 'Pricing & submission',
-      done: false,
+      status: 'doing',
       startDate: '2026-06-08',
       endDate: '2026-06-12',
       sortOrder: 2,
@@ -179,7 +180,7 @@ export async function seedDemoData(): Promise<void> {
       id: uid(),
       jobId: loft.id,
       title: 'First Fix Electrical',
-      done: false,
+      status: 'todo',
       startDate: null,
       endDate: null,
       sortOrder: 1,
@@ -189,7 +190,7 @@ export async function seedDemoData(): Promise<void> {
       id: uid(),
       jobId: loft.id,
       title: 'Second Fix & Testing',
-      done: false,
+      status: 'todo',
       startDate: null,
       endDate: null,
       sortOrder: 2,

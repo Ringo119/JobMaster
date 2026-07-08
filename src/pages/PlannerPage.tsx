@@ -22,9 +22,17 @@ import {
 import { formatGBP } from '../lib/currency';
 import { today, toISODate } from '../lib/dates';
 import { STATUS_STYLES, visualStatus, type VisualStatus } from '../lib/jobStatus';
+import { TASK_STATUS_STYLES } from '../lib/taskStatus';
 import { JOB_STATUSES, JOB_STATUS_LABELS, type JobStatus } from '../data/models/job';
 import type { Job } from '../data/models/job';
-import type { JobTask } from '../data/models/task';
+import {
+  TASK_STATUSES,
+  TASK_STATUS_LABELS,
+  isTaskDone,
+  type JobTask,
+  type TaskStatus,
+} from '../data/models/task';
+import { BoardModal } from '../components/board/BoardModal';
 
 const LABEL_COL = 200;
 const END_PADDING_DAYS = 4;
@@ -100,7 +108,7 @@ function AddTaskRow({ jobId }: { jobId: string }) {
     await createTask.mutateAsync({
       jobId,
       title: trimmed,
-      done: false,
+      status: 'todo',
       startDate: startDate || null,
       endDate: endDate || null,
     });
@@ -161,6 +169,7 @@ function EditTaskForm({ task, onClose }: { task: JobTask; onClose: () => void })
   const updateTask = useUpdateTask();
   const removeTask = useRemoveTask();
   const [title, setTitle] = useState(task.title);
+  const [status, setStatus] = useState<TaskStatus>(task.status);
   const [startDate, setStartDate] = useState(task.startDate ?? '');
   const [endDate, setEndDate] = useState(task.endDate ?? '');
 
@@ -170,7 +179,7 @@ function EditTaskForm({ task, onClose }: { task: JobTask; onClose: () => void })
     if (!trimmed || updateTask.isPending) return;
     updateTask.mutate({
       id: task.id,
-      patch: { title: trimmed, startDate: startDate || null, endDate: endDate || null },
+      patch: { title: trimmed, status, startDate: startDate || null, endDate: endDate || null },
     });
     onClose();
   }
@@ -189,6 +198,18 @@ function EditTaskForm({ task, onClose }: { task: JobTask; onClose: () => void })
           autoFocus
           className="w-36 min-w-0 rounded border border-slate-300 bg-surface px-1.5 py-0.5 text-[11px] text-slate-700 focus:border-brand-600 focus:outline-none"
         />
+        <select
+          value={status}
+          onChange={(e) => setStatus(e.target.value as TaskStatus)}
+          aria-label="Task status"
+          className={taskDateInputCls}
+        >
+          {TASK_STATUSES.map((s) => (
+            <option key={s} value={s}>
+              {TASK_STATUS_LABELS[s]}
+            </option>
+          ))}
+        </select>
         <input
           type="date"
           value={startDate}
@@ -256,19 +277,31 @@ function TaskSubRow({
     return <EditTaskForm task={task} onClose={() => setEditing(false)} />;
   }
 
+  const done = isTaskDone(task);
+
   return (
     <div className="group grid items-center" style={{ gridTemplateColumns }}>
       <div className="sticky left-0 z-10 flex min-w-0 items-center gap-1.5 bg-surface py-1 pl-6 pr-2">
         <input
           type="checkbox"
-          checked={task.done}
-          onChange={(e) => updateTask.mutate({ id: task.id, patch: { done: e.target.checked } })}
-          aria-label={`Mark ${task.title} as ${task.done ? 'not done' : 'done'}`}
+          checked={done}
+          onChange={(e) =>
+            updateTask.mutate({
+              id: task.id,
+              patch: { status: e.target.checked ? 'done' : 'todo' },
+            })
+          }
+          aria-label={`Mark ${task.title} as ${done ? 'not done' : 'done'}`}
           className="h-3 w-3 shrink-0 rounded border-slate-300 text-brand-600 focus:ring-brand-600"
         />
         <span
+          aria-hidden
+          title={TASK_STATUS_STYLES[task.status].label}
+          className={`h-1.5 w-1.5 shrink-0 rounded-full ${TASK_STATUS_STYLES[task.status].dot}`}
+        />
+        <span
           className={`truncate text-[11px] ${
-            task.done ? 'text-slate-400 line-through' : 'text-slate-500'
+            done ? 'text-slate-400 line-through' : 'text-slate-500'
           }`}
         >
           {task.title}
@@ -286,13 +319,15 @@ function TaskSubRow({
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className={`my-0.5 flex h-5 items-center overflow-hidden rounded px-2 transition hover:opacity-90 ${
-            task.done ? 'bg-violet-300' : 'bg-violet-500'
-          }`}
+          className={`my-0.5 flex h-5 items-center overflow-hidden rounded px-2 transition ${
+            TASK_STATUS_STYLES[task.status].bar
+          } ${done ? 'opacity-70 hover:opacity-80' : 'hover:opacity-90'}`}
           style={{ gridColumn: `${cols.start} / ${cols.end}` }}
           title={`${task.title} — click to edit`}
         >
-          <span className="truncate text-[11px] text-white">{task.title}</span>
+          <span className={`truncate text-[11px] text-white ${done ? 'line-through' : ''}`}>
+            {task.title}
+          </span>
         </button>
       )}
     </div>
@@ -415,6 +450,7 @@ export function PlannerPage() {
   const [filters, setFilters] = useState<Filters>({ clientId: 'all', status: 'all' });
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [drag, setDrag] = useState<DragState | null>(null);
+  const [boardJobId, setBoardJobId] = useState<string | null>(null);
 
   const { days: totalDays, dayW } = VIEWS[view];
   const windowStart = anchor;
@@ -605,10 +641,14 @@ export function PlannerPage() {
             {label}
           </span>
         ))}
-        <span className="inline-flex items-center gap-1.5">
-          <span className="inline-block h-3 w-4 rounded bg-violet-500" />
-          Task
-        </span>
+        <span aria-hidden className="h-3 w-px bg-slate-300" />
+        <span className="font-semibold text-slate-500">Tasks:</span>
+        {TASK_STATUSES.map((s) => (
+          <span key={s} className="inline-flex items-center gap-1.5">
+            <span className={`inline-block h-3 w-4 rounded ${TASK_STATUS_STYLES[s].bar}`} />
+            {TASK_STATUS_LABELS[s]}
+          </span>
+        ))}
       </div>
 
       {asapJobs.length > 0 && (
@@ -709,7 +749,12 @@ export function PlannerPage() {
                 const offsetX = isDragging ? drag.dayDelta * dayW : 0;
                 const cols = barColumns(range);
                 const jobTasks = tasksByJob.get(job.id) ?? [];
-                const doneCount = jobTasks.filter((t) => t.done).length;
+                const statusCounts = {
+                  todo: jobTasks.filter((t) => t.status === 'todo').length,
+                  doing: jobTasks.filter((t) => t.status === 'doing').length,
+                  done: jobTasks.filter(isTaskDone).length,
+                };
+                const doneCount = statusCounts.done;
                 const isExpanded = expanded.has(job.id);
 
                 return (
@@ -738,10 +783,40 @@ export function PlannerPage() {
                             <span className="block truncate text-slate-500">{job.project}</span>
                           )}
                         </Link>
-                        {jobTasks.length > 0 && (
-                          <span className="shrink-0 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">
-                            {doneCount}/{jobTasks.length}
-                          </span>
+                        {jobTasks.length > 0 ? (
+                          <button
+                            type="button"
+                            onClick={() => setBoardJobId(job.id)}
+                            aria-label={`Open board — ${statusCounts.todo} to do, ${statusCounts.doing} doing, ${statusCounts.done} done`}
+                            title="Open task board"
+                            className="flex shrink-0 items-center gap-1.5 rounded-full bg-slate-100 px-1.5 py-0.5 transition hover:bg-slate-200 hover:ring-1 hover:ring-slate-300"
+                          >
+                            <span className="text-[10px] font-semibold text-slate-500">
+                              {doneCount}/{jobTasks.length}
+                            </span>
+                            <span aria-hidden className="flex h-1.5 w-10 overflow-hidden rounded">
+                              {TASK_STATUSES.map(
+                                (s) =>
+                                  statusCounts[s] > 0 && (
+                                    <span
+                                      key={s}
+                                      className={TASK_STATUS_STYLES[s].bar}
+                                      style={{ flexGrow: statusCounts[s] }}
+                                    />
+                                  ),
+                              )}
+                            </span>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setBoardJobId(job.id)}
+                            aria-label={`Open board for ${clientName} #${job.jobNumber}`}
+                            title="Open task board"
+                            className="shrink-0 rounded px-0.5 text-[11px] text-slate-300 transition hover:text-slate-600"
+                          >
+                            ▦
+                          </button>
                         )}
                       </div>
 
@@ -808,6 +883,8 @@ export function PlannerPage() {
           </Link>
         </div>
       </Card>
+
+      {boardJobId && <BoardModal jobId={boardJobId} onClose={() => setBoardJobId(null)} />}
     </div>
   );
 }
