@@ -74,20 +74,19 @@ const LEGEND: { status: VisualStatus; label: string }[] = [
   { status: 'overdue', label: 'Overdue' },
 ];
 
+const taskDateInputCls =
+  'shrink-0 rounded border border-slate-300 bg-surface px-1 py-0.5 text-[11px] text-slate-600 focus:border-brand-600 focus:outline-none';
+
 /**
  * Inline add-task row shown under an expanded job — tasks can be added right
- * from the Planner without opening the job. New tasks start undated; dates
- * (and therefore bars) can be set from Job Details.
+ * from the Planner without opening the job. Dates are optional; a task given
+ * both dates renders as a bar immediately.
  */
-function AddTaskRow({
-  jobId,
-  gridTemplateColumns,
-}: {
-  jobId: string;
-  gridTemplateColumns: string;
-}) {
+function AddTaskRow({ jobId }: { jobId: string }) {
   const createTask = useCreateTask();
   const [title, setTitle] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -97,17 +96,21 @@ function AddTaskRow({
       jobId,
       title: trimmed,
       done: false,
-      startDate: null,
-      endDate: null,
+      startDate: startDate || null,
+      endDate: endDate || null,
     });
     setTitle('');
+    setStartDate('');
+    setEndDate('');
   }
 
   return (
-    <div className="grid" style={{ gridTemplateColumns }}>
+    // The form spans the whole scroll row but sticks to the left edge, giving
+    // the date pickers room beyond the narrow label column.
+    <div>
       <form
         onSubmit={handleAdd}
-        className="sticky left-0 z-10 flex items-center gap-1.5 bg-surface py-1 pl-6 pr-2"
+        className="sticky left-0 z-10 flex w-max items-center gap-1.5 bg-surface py-1 pl-6 pr-2"
       >
         <input
           type="text"
@@ -115,7 +118,26 @@ function AddTaskRow({
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Add a task…"
           aria-label="New task title"
-          className="w-full min-w-0 rounded border border-slate-300 bg-surface px-1.5 py-0.5 text-[11px] text-slate-700 placeholder:text-slate-400 focus:border-brand-600 focus:outline-none"
+          className="w-36 min-w-0 rounded border border-slate-300 bg-surface px-1.5 py-0.5 text-[11px] text-slate-700 placeholder:text-slate-400 focus:border-brand-600 focus:outline-none"
+        />
+        <input
+          type="date"
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+          aria-label="New task start date"
+          title="Start date (optional)"
+          className={taskDateInputCls}
+        />
+        <span aria-hidden className="text-[11px] text-slate-400">
+          →
+        </span>
+        <input
+          type="date"
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
+          aria-label="New task end date"
+          title="End date (optional)"
+          className={taskDateInputCls}
         />
         <button
           type="submit"
@@ -650,10 +672,7 @@ export function PlannerPage() {
                             </div>
                           );
                         })}
-                        <AddTaskRow
-                          jobId={job.id}
-                          gridTemplateColumns={gridTemplateColumns}
-                        />
+                        <AddTaskRow jobId={job.id} />
                       </>
                     )}
                   </div>
