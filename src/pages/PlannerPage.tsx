@@ -13,7 +13,12 @@ import { Button } from '../components/ui/Button';
 import { StatTilesRow } from '../components/stats/StatTilesRow';
 import { useJobs, useUpdateJob } from '../hooks/useJobs';
 import { useClients } from '../hooks/useClients';
-import { useAllTasks, useCreateTask } from '../hooks/useTasks';
+import {
+  useAllTasks,
+  useCreateTask,
+  useUpdateTask,
+  useRemoveTask,
+} from '../hooks/useTasks';
 import { formatGBP } from '../lib/currency';
 import { today, toISODate } from '../lib/dates';
 import { STATUS_STYLES, visualStatus, type VisualStatus } from '../lib/jobStatus';
@@ -147,6 +152,149 @@ function AddTaskRow({ jobId }: { jobId: string }) {
           Add
         </button>
       </form>
+    </div>
+  );
+}
+
+/** Inline editor for an existing task — mounts fresh so state seeds from the task. */
+function EditTaskForm({ task, onClose }: { task: JobTask; onClose: () => void }) {
+  const updateTask = useUpdateTask();
+  const removeTask = useRemoveTask();
+  const [title, setTitle] = useState(task.title);
+  const [startDate, setStartDate] = useState(task.startDate ?? '');
+  const [endDate, setEndDate] = useState(task.endDate ?? '');
+
+  function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = title.trim();
+    if (!trimmed || updateTask.isPending) return;
+    updateTask.mutate({
+      id: task.id,
+      patch: { title: trimmed, startDate: startDate || null, endDate: endDate || null },
+    });
+    onClose();
+  }
+
+  return (
+    <div>
+      <form
+        onSubmit={handleSave}
+        className="sticky left-0 z-10 flex w-max items-center gap-1.5 bg-surface py-1 pl-6 pr-2"
+      >
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          aria-label="Task title"
+          autoFocus
+          className="w-36 min-w-0 rounded border border-slate-300 bg-surface px-1.5 py-0.5 text-[11px] text-slate-700 focus:border-brand-600 focus:outline-none"
+        />
+        <input
+          type="date"
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+          aria-label="Task start date"
+          className={taskDateInputCls}
+        />
+        <span aria-hidden className="text-[11px] text-slate-400">
+          →
+        </span>
+        <input
+          type="date"
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
+          aria-label="Task end date"
+          className={taskDateInputCls}
+        />
+        <button
+          type="submit"
+          disabled={updateTask.isPending || !title.trim()}
+          className="shrink-0 text-[11px] font-medium text-brand-600 transition hover:text-brand-700 disabled:opacity-40"
+        >
+          Save
+        </button>
+        <button
+          type="button"
+          onClick={onClose}
+          className="shrink-0 text-[11px] font-medium text-slate-500 transition hover:text-slate-700"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          aria-label={`Remove task ${task.title}`}
+          onClick={() => {
+            removeTask.mutate(task.id);
+            onClose();
+          }}
+          className="shrink-0 rounded px-1 text-[11px] text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+        >
+          ✕
+        </button>
+      </form>
+    </div>
+  );
+}
+
+/**
+ * One task under an expanded job: checkbox to mark done, pencil (or a click on
+ * the bar) to edit title/dates inline, all without leaving the Planner.
+ */
+function TaskSubRow({
+  task,
+  cols,
+  gridTemplateColumns,
+}: {
+  task: JobTask;
+  cols: { start: number; end: number } | null;
+  gridTemplateColumns: string;
+}) {
+  const updateTask = useUpdateTask();
+  const [editing, setEditing] = useState(false);
+
+  if (editing) {
+    return <EditTaskForm task={task} onClose={() => setEditing(false)} />;
+  }
+
+  return (
+    <div className="group grid items-center" style={{ gridTemplateColumns }}>
+      <div className="sticky left-0 z-10 flex min-w-0 items-center gap-1.5 bg-surface py-1 pl-6 pr-2">
+        <input
+          type="checkbox"
+          checked={task.done}
+          onChange={(e) => updateTask.mutate({ id: task.id, patch: { done: e.target.checked } })}
+          aria-label={`Mark ${task.title} as ${task.done ? 'not done' : 'done'}`}
+          className="h-3 w-3 shrink-0 rounded border-slate-300 text-brand-600 focus:ring-brand-600"
+        />
+        <span
+          className={`truncate text-[11px] ${
+            task.done ? 'text-slate-400 line-through' : 'text-slate-500'
+          }`}
+        >
+          {task.title}
+        </span>
+        <button
+          type="button"
+          aria-label={`Edit task ${task.title}`}
+          onClick={() => setEditing(true)}
+          className="shrink-0 rounded px-0.5 text-[11px] text-slate-300 opacity-0 transition hover:text-slate-600 focus:opacity-100 group-hover:opacity-100"
+        >
+          ✎
+        </button>
+      </div>
+      {cols && (
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          className={`my-0.5 flex h-5 items-center overflow-hidden rounded px-2 transition hover:opacity-90 ${
+            task.done ? 'bg-violet-300' : 'bg-violet-500'
+          }`}
+          style={{ gridColumn: `${cols.start} / ${cols.end}` }}
+          title={`${task.title} — click to edit`}
+        >
+          <span className="truncate text-[11px] text-white">{task.title}</span>
+        </button>
+      )}
     </div>
   );
 }
@@ -633,43 +781,12 @@ export function PlannerPage() {
                           const tRange = taskBarRange(task);
                           const tCols = tRange ? barColumns(tRange) : null;
                           return (
-                            <div
+                            <TaskSubRow
                               key={task.id}
-                              className="grid items-center"
-                              style={{ gridTemplateColumns }}
-                            >
-                              <div className="sticky left-0 z-10 flex min-w-0 items-center gap-1.5 bg-surface py-1 pl-6 pr-2">
-                                <span
-                                  aria-hidden
-                                  className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-                                    task.done ? 'bg-green-500' : 'bg-violet-500'
-                                  }`}
-                                />
-                                <span
-                                  className={`truncate text-[11px] ${
-                                    task.done
-                                      ? 'text-slate-400 line-through'
-                                      : 'text-slate-500'
-                                  }`}
-                                >
-                                  {task.title}
-                                </span>
-                              </div>
-                              {tCols && (
-                                <Link
-                                  to={`/jobs/${job.id}`}
-                                  className={`my-0.5 flex h-5 items-center overflow-hidden rounded px-2 transition hover:opacity-90 ${
-                                    task.done ? 'bg-violet-300' : 'bg-violet-500'
-                                  }`}
-                                  style={{ gridColumn: `${tCols.start} / ${tCols.end}` }}
-                                  title={task.title}
-                                >
-                                  <span className="truncate text-[11px] text-white">
-                                    {task.title}
-                                  </span>
-                                </Link>
-                              )}
-                            </div>
+                              task={task}
+                              cols={tCols}
+                              gridTemplateColumns={gridTemplateColumns}
+                            />
                           );
                         })}
                         <AddTaskRow jobId={job.id} />
